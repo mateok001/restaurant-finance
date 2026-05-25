@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>{{TITLE}}</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #f0f0f0; padding: 40px; min-height: 100vh;
+  }
+  .header { text-align: center; margin-bottom: 30px; }
+  .header h1 { font-size: 28px; color: #D4A574; margin-bottom: 8px; }
+  .header .date { font-size: 14px; color: #888; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+  .kpi-card {
+    background: rgba(255,255,255,0.08); border-radius: 12px; padding: 20px;
+    text-align: center; border: 1px solid rgba(255,255,255,0.1);
+  }
+  .kpi-card .label { font-size: 13px; color: #999; margin-bottom: 8px; }
+  .kpi-card .value { font-size: 28px; font-weight: 700; color: #D4A574; }
+  .kpi-card .change { font-size: 12px; margin-top: 4px; }
+  .change.up { color: #ff4d4f; }
+  .change.down { color: #52c41a; }
+  .change.flat { color: #888; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 30px; }
+  .chart-box {
+    background: rgba(255,255,255,0.06); border-radius: 12px; padding: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .chart-box h3 { font-size: 15px; color: #D4A574; margin-bottom: 10px; }
+  .chart-container { width: 100%; height: 300px; }
+  .anomalies {
+    background: rgba(255,77,79,0.12); border: 1px solid rgba(255,77,79,0.3);
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 30px;
+  }
+  .anomalies h3 { font-size: 15px; color: #ff4d4f; margin-bottom: 8px; }
+  .anomalies ul { list-style: none; }
+  .anomalies li { font-size: 13px; color: #ff7875; padding: 3px 0; }
+  .anomalies li::before { content: '⚠ '; }
+  .footer { text-align: center; font-size: 12px; color: #666; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>{{TITLE}}</h1>
+  <div class="date">生成时间: {{GEN_DATE}}</div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="label">总收入</div>
+    <div class="value" id="val-revenue">--</div>
+    <div class="change" id="chg-revenue">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">总支出</div>
+    <div class="value" id="val-expenses">--</div>
+    <div class="change" id="chg-expenses">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">毛利</div>
+    <div class="value" id="val-gross">--</div>
+    <div class="change" id="chg-gross">--</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">净利润</div>
+    <div class="value" id="val-net">--</div>
+    <div class="change" id="chg-net">--</div>
+  </div>
+</div>
+
+<div class="charts-row">
+  <div class="chart-box">
+    <h3>收入构成</h3>
+    <div class="chart-container" id="chart-revenue"></div>
+  </div>
+  <div class="chart-box">
+    <h3>支出构成</h3>
+    <div class="chart-container" id="chart-expense"></div>
+  </div>
+</div>
+
+<div class="anomalies" id="anomalies-box" style="display:none;">
+  <h3>异常提醒</h3>
+  <ul id="anomalies-list"></ul>
+</div>
+
+<div class="footer">
+  <p>本简报由餐馆财务系统自动生成 | {{GEN_DATE}}</p>
+</div>
+
+<script>
+(function() {
+  var d = JSON.parse(document.getElementById('DATA')?.textContent?.replace(/&quot;/g, '"') || '{}');
+
+  function fmt(n) { return '¥' + Number(n || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+  document.getElementById('val-revenue').textContent = fmt(d.current?.totalRevenue);
+  document.getElementById('val-expenses').textContent = fmt(d.current?.totalExpenses);
+  document.getElementById('val-gross').textContent = fmt(d.current?.grossProfit);
+  document.getElementById('val-net').textContent = fmt(d.current?.netProfit);
+
+  function showChange(elId, val) {
+    var el = document.getElementById(elId);
+    if (!val || val === 0) { el.textContent = '持平'; el.className = 'change flat'; }
+    else if (val > 0) { el.textContent = '↑ ' + val + '% (环比)'; el.className = 'change up'; }
+    else { el.textContent = '↓ ' + Math.abs(val) + '% (环比)'; el.className = 'change down'; }
+  }
+  showChange('chg-revenue', d.changes?.revenueMoM);
+  showChange('chg-expenses', d.changes?.expenseMoM);
+  showChange('chg-gross', d.changes?.profitMoM);
+  showChange('chg-net', d.changes?.profitMoM);
+
+  // Revenue pie
+  var revData = d.revenueByChannel || {};
+  var pieRev = echarts.init(document.getElementById('chart-revenue'));
+  pieRev.setOption({
+    tooltip: { trigger: 'item' },
+    series: [{
+      type: 'pie', radius: ['40%', '70%'],
+      data: Object.entries(revData).map(function(e) { return { name: e[0], value: e[1] }; }),
+      label: { color: '#ccc', fontSize: 11 },
+      itemStyle: { borderColor: '#1a1a2e', borderWidth: 2 }
+    }]
+  });
+
+  // Expense pie
+  var expData = d.expensesByCategory || {};
+  var pieExp = echarts.init(document.getElementById('chart-expense'));
+  pieExp.setOption({
+    tooltip: { trigger: 'item' },
+    series: [{
+      type: 'pie', radius: ['40%', '70%'],
+      data: Object.entries(expData).map(function(e) { return { name: e[0], value: e[1] }; }),
+      label: { color: '#ccc', fontSize: 11 },
+      itemStyle: { borderColor: '#1a1a2e', borderWidth: 2 }
+    }]
+  });
+
+  // Anomalies
+  var anomalies = d.anomalies || [];
+  if (anomalies.length > 0) {
+    document.getElementById('anomalies-box').style.display = 'block';
+    var list = document.getElementById('anomalies-list');
+    anomalies.forEach(function(a) {
+      var li = document.createElement('li');
+      li.textContent = a;
+      list.appendChild(li);
+    });
+  }
+})();
+</script>
+</body>
+</html>

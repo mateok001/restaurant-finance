@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ========== 用户与认证 ==========
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
+  role         String   @default("staff")
+  avatarUrl    String?  @map("avatar_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sessions       Session[]
+  purchases      Purchase[]
+  expenses       Expense[]
+  dailyRevenues  DailyRevenue[]
+  salaryRecords  SalaryRecord[]
+  reports        Report[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  refreshToken String   @map("refresh_token")
+  expiresAt    DateTime @map("expires_at")
+  deviceInfo   String?  @map("device_info")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ========== 供应商与商品 ==========
+model Supplier {
+  id            String   @id @default(uuid())
+  name          String
+  contactPhone  String?  @map("contact_phone")
+  contactPerson String?  @map("contact_person")
+  address       String?
+  remark        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  products  Product[]
+  purchases Purchase[]
+
+  @@map("suppliers")
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  category     String   @default("ingredients")
+  unit         String   @default("斤")
+  defaultPrice Float?   @map("default_price")
+  supplierId   String?  @map("supplier_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  supplier  Supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchases Purchase[]
+
+  @@map("products")
+}
+
+// ========== 采购记录 ==========
+model Purchase {
+  id             String   @id @default(uuid())
+  supplierId     String   @map("supplier_id")
+  productId      String   @map("product_id")
+  quantity       Float    @default(0)
+  unitPrice      Float    @map("unit_price") @default(0)
+  totalAmount    Float    @map("total_amount") @default(0)
+  purchaseDate   DateTime @map("purchase_date")
+  recordedBy     String   @map("recorded_by")
+  inputMethod    String   @map("input_method") @default("manual")
+  invoiceFileUrl String?  @map("invoice_file_url")
+  rawInputText   String?  @map("raw_input_text")
+  memo           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+  recorder User     @relation(fields: [recordedBy], references: [id])
+
+  @@map("purchases")
+}
+
+// ========== 支出记录（非采购类） ==========
+model Expense {
+  id             String       @id @default(uuid())
+  category       String
+  amount         Float        @default(0)
+  expenseDate    DateTime     @map("expense_date")
+  recordedBy     String       @map("recorded_by")
+  description    String?
+  invoiceFileUrl String?      @map("invoice_file_url")
+  salaryRecordId String?      @map("salary_record_id") @unique
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  recorder      User          @relation(fields: [recordedBy], references: [id])
+  salaryRecord  SalaryRecord? @relation(fields: [salaryRecordId], references: [id], onDelete: SetNull)
+
+  @@map("expenses")
+}
+
+// ========== 员工管理 ==========
+model Employee {
+  id              String    @id @default(uuid())
+  name            String
+  idCardNumber    String    @map("id_card_number")
+  bankCardNumber  String    @map("bank_card_number")
+  phone           String
+  baseSalary      Float     @map("base_salary") @default(0)
+  scheduledPayDay Int       @map("scheduled_pay_day") @default(15)
+  position        String    @default("waiter")
+  isActive        Boolean   @default(true) @map("is_active")
+  hireDate        DateTime  @map("hire_date")
+  leaveDate       DateTime? @map("leave_date")
+  remark          String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  salaryRecords SalaryRecord[]
+
+  @@map("employees")
+}
+
+// ========== 工资发放记录 ==========
+model SalaryRecord {
+  id               String    @id @default(uuid())
+  employeeId       String    @map("employee_id")
+  periodStart      DateTime  @map("period_start")
+  periodEnd        DateTime  @map("period_end")
+  baseSalary       Float     @map("base_salary") @default(0)
+  bonus            Float     @default(0)
+  deduction        Float     @default(0)
+  attendanceStatus String    @map("attendance_status") @default("{}")
+  grossSalary      Float     @map("gross_salary") @default(0)
+  netSalary        Float     @map("net_salary") @default(0)
+  scheduledPayDate DateTime  @map("scheduled_pay_date")
+  actualPayDate    DateTime? @map("actual_pay_date")
+  payStatus        String    @default("pending") @map("pay_status")
+  recordedBy       String    @map("recorded_by")
+  memo             String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  recorder User     @relation(fields: [recordedBy], references: [id])
+  expense  Expense?
+
+  @@map("salary_records")
+}
+
+// ========== 收入管理 ==========
+model RevenueChannel {
+  id        String   @id @default(uuid())
+  name      String
+  isDefault Boolean  @default(false) @map("is_default")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  dailyRevenues DailyRevenue[]
+
+  @@map("revenue_channels")
+}
+
+model DailyRevenue {
+  id          String   @id @default(uuid())
+  channelId   String   @map("channel_id")
+  amount      Float    @default(0)
+  revenueDate DateTime @map("revenue_date")
+  recordedBy  String   @map("recorded_by")
+  memo        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  channel  RevenueChannel @relation(fields: [channelId], references: [id])
+  recorder User           @relation(fields: [recordedBy], references: [id])
+
+  @@map("daily_revenues")
+}
+
+// ========== 经营简报 ==========
+model Report {
+  id          String   @id @default(uuid())
+  type        String
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+  imageUrl    String?  @map("image_url")
+  summaryJson String?  @map("summary_json")
+  generatedAt DateTime @default(now()) @map("generated_at")
+  generatedBy String   @map("generated_by")
+
+  generatedByUser User @relation(fields: [generatedBy], references: [id])
+
+  @@map("reports")
+}

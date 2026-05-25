@@ -1,0 +1,117 @@
+version: "3.8"
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: rf-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: restaurant_finance
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: rf-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # MinIO 文件存储
+  minio:
+    image: minio/minio:latest
+    container_name: rf-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  # FunASR 语音识别 (可选：如不使用语音功能可注释)
+  funasr:
+    image: registry.cn-hangzhou.aliyuncs.com/funasr_repo/funasr:funasr-runtime-sdk-online-cpu-0.1.10
+    container_name: rf-funasr
+    ports:
+      - "8100:10095"
+    environment:
+      ASR_MODEL: SenseVoiceSmall
+    restart: unless-stopped
+    profiles:
+      - ai
+
+  # PaddleOCR (可选)
+  paddleocr:
+    image: paddlepaddle/paddleocr:latest
+    container_name: rf-paddleocr
+    ports:
+      - "8200:8868"
+    restart: unless-stopped
+    profiles:
+      - ai
+
+  # Ollama + Qwen (可选)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rf-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    profiles:
+      - ai
+
+  # 后端 API 服务
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: rf-server
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/restaurant_finance?schema=public
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: restaurant-finance
+      FUNASR_SERVICE_URL: http://funasr:10095
+      PADDLEOCR_SERVICE_URL: http://paddleocr:8868
+      OLLAMA_SERVICE_URL: http://ollama:11434
+      JWT_ACCESS_SECRET: change-this-to-a-random-secret
+      JWT_REFRESH_SECRET: change-this-to-another-random-secret
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    restart: unless-stopped
+
+  # Web 前端
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: rf-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:
+  ollama_data:
