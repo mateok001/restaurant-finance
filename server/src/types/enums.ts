@@ -24,15 +24,15 @@ export const InputMethod = {
 } as const;
 export type InputMethod = (typeof InputMethod)[keyof typeof InputMethod];
 
-export const ExpenseCategory = {
-  salary: 'salary',
-  rent: 'rent',
-  utilities: 'utilities',
-  gas: 'gas',
-  maintenance: 'maintenance',
-  other: 'other',
-} as const;
-export type ExpenseCategory = (typeof ExpenseCategory)[keyof typeof ExpenseCategory];
+export const ExpenseCategoryLabels: Record<string, string> = {
+  salary: '工资',
+  rent: '房租',
+  utilities: '水电费',
+  gas: '煤气费',
+  maintenance: '维修',
+  other: '其他',
+};
+export type ExpenseCategory = string;
 
 export const EmployeePosition = {
   chef: 'chef',

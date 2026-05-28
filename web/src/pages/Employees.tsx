@@ -75,8 +75,8 @@ export default function EmployeesPage() {
         onCancel={() => { setModalOpen(false); setEditing(null); setShowFull(false); }} onOk={() => form.submit()}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item name="name" label="姓名" rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="idCardNumber" label="身份证号" rules={[{ required: true }]}><Input maxLength={18} /></Form.Item>
-          <Form.Item name="bankCardNumber" label="银行卡号" rules={[{ required: true }]}><Input maxLength={30} /></Form.Item>
+          <Form.Item name="idCardNumber" label="身份证号"><Input maxLength={18} placeholder="非必填" /></Form.Item>
+          <Form.Item name="bankCardNumber" label="银行卡号"><Input maxLength={30} placeholder="非必填" /></Form.Item>
           <Form.Item name="phone" label="电话号码" rules={[{ required: true }]}><Input maxLength={20} /></Form.Item>
           <Form.Item name="position" label="岗位" rules={[{ required: true }]}>
             <Select options={Object.entries(positionLabels).map(([k, v]) => ({ label: v, value: k }))} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, Popconfirm, message, Space, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Popconfirm, message, Space, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import api from '../services/api';
 
@@ -9,7 +9,6 @@ const categoryLabels: Record<string, string> = {
 
 export default function ProductsPage() {
   const [data, setData] = useState<any>({ items: [], total: 0 });
-  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -17,13 +16,8 @@ export default function ProductsPage() {
 
   const fetchData = () => {
     setLoading(true);
-    Promise.all([
-      api.get('/products', { params: { pageSize: 200 } }),
-      api.get('/suppliers', { params: { pageSize: 200 } }),
-    ]).then(([p, s]) => {
-      setData(p.data);
-      setSuppliers(s.data.items);
-    }).finally(() => setLoading(false));
+    api.get('/products', { params: { pageSize: 200 } })
+      .then((r) => setData(r.data)).finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -55,11 +49,8 @@ export default function ProductsPage() {
   };
 
   const columns = [
-    { title: '商品名称', dataIndex: 'name', width: 120 },
-    { title: '类别', dataIndex: 'category', width: 100, render: (v: string) => <Tag>{categoryLabels[v] || v}</Tag> },
-    { title: '单位', dataIndex: 'unit', width: 60 },
-    { title: '默认单价', dataIndex: 'defaultPrice', width: 100, render: (v: number) => v ? `¥${Number(v).toFixed(2)}` : '-' },
-    { title: '供应商', dataIndex: 'supplier', width: 120, render: (s: any) => s?.name || '-' },
+    { title: '商品名称', dataIndex: 'name', width: 200 },
+    { title: '类别', dataIndex: 'category', width: 120, render: (v: string) => <Tag>{categoryLabels[v] || v}</Tag> },
     {
       title: '操作', width: 120,
       render: (_: any, record: any) => (
@@ -83,15 +74,9 @@ export default function ProductsPage() {
       <Modal title={editing ? '编辑商品' : '新增商品'} open={modalOpen}
         onCancel={() => { setModalOpen(false); setEditing(null); }} onOk={() => form.submit()}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="name" label="商品名称" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item name="name" label="商品名称" rules={[{ required: true, message: '请输入商品名称' }]}><Input /></Form.Item>
           <Form.Item name="category" label="类别" rules={[{ required: true }]} initialValue="ingredients">
             <Select options={Object.entries(categoryLabels).map(([k, v]) => ({ label: v, value: k }))} />
-          </Form.Item>
-          <Form.Item name="unit" label="单位" rules={[{ required: true }]} initialValue="斤"><Input /></Form.Item>
-          <Form.Item name="defaultPrice" label="默认单价"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
-          <Form.Item name="supplierId" label="供应商">
-            <Select showSearch optionFilterProp="label" allowClear
-              options={suppliers.map((s: any) => ({ label: s.name, value: s.id }))} />
           </Form.Item>
         </Form>
       </Modal>

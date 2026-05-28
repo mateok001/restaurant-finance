@@ -33,8 +33,14 @@ export function errorHandler(
   // Prisma known errors
   if (err.constructor?.name === 'PrismaClientKnownRequestError') {
     const code = (err as any).code;
+    const meta = (err as any).meta;
+    console.error(`[PRISMA] code=${code} meta=`, JSON.stringify(meta), 'msg=', err.message);
     if (code === 'P2002') {
-      res.status(409).json({ error: '数据已存在，请检查重复字段' });
+      res.status(409).json({ error: '数据已存在，请检查重复字段', detail: meta?.target });
+      return;
+    }
+    if (code === 'P2003') {
+      res.status(400).json({ error: '关联数据不存在，请检查关联记录是否有效', field: meta?.field_name });
       return;
     }
     if (code === 'P2025') {

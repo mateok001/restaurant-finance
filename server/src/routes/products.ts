@@ -11,9 +11,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
-    const category = req.query.category as any;
-    const supplierId = req.query.supplierId as string;
-    const result = await productService.list(page, pageSize, category, supplierId);
+    const category = req.query.category as string;
+    const result = await productService.list(page, pageSize, category);
     res.json(result);
   } catch (err) { next(err); }
 });

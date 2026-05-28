@@ -2,17 +2,38 @@
 body {
   font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f5f3f0;
 }
 #root { min-height: 100vh; }
 .ant-layout { min-height: 100vh; }
+
+/* Logo */
 .logo {
-  height: 48px; margin: 8px 16px;
-  display: flex; align-items: center; justify-content: center;
-  color: #D4A574; font-size: 18px; font-weight: 700;
+  height: 52px; margin: 10px 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  color: #D4A574; font-size: 17px; font-weight: 700;
   white-space: nowrap; overflow: hidden;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(212, 165, 116, 0.15);
+  padding-bottom: 10px;
 }
+
+/* Page title style */
+.page-title {
+  font-size: 20px; font-weight: 600; margin-bottom: 16px;
+  color: #1a1a2e;
+}
+
+/* KPI stat cards */
 .stat-card {
   text-align: center; padding: 20px;
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 .stat-card .stat-number {
   font-size: 32px; font-weight: 700; color: #D4A574;
@@ -20,3 +41,89 @@ body {
 .stat-card .stat-label {
   font-size: 14px; color: #999; margin-top: 4px;
 }
+
+/* Enhanced page cards */
+.page-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* Sidebar menu item subtle hover */
+.ant-menu-dark.ant-menu-inline .ant-menu-item:hover {
+  background: rgba(212, 165, 116, 0.12) !important;
+}
+.ant-menu-dark.ant-menu-inline .ant-menu-item-selected {
+  background: rgba(212, 165, 116, 0.2) !important;
+}
+
+/* Table row hover enhancement */
+.ant-table-tbody > tr:hover > td {
+  background: #fdf8f3 !important;
+}
+
+/* Card hover effect */
+.ant-card-hoverable:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+  transform: translateY(-1px);
+}
+
+/* Modal polish */
+.ant-modal-header {
+  border-bottom: 1px solid #f5f0e8 !important;
+}
+
+/* Button primary override for restaurant theme */
+.ant-btn-primary {
+  border-color: #D4A574 !important;
+  background: #D4A574 !important;
+}
+.ant-btn-primary:hover {
+  border-color: #c9965e !important;
+  background: #c9965e !important;
+}
+
+/* Link color */
+a, .ant-btn-link {
+  color: #D4A574;
+}
+.ant-btn-link:hover {
+  color: #c9965e !important;
+}
+
+/* Statistic value */
+.ant-statistic-content {
+  font-weight: 600;
+}
+
+/* Input focus border */
+.ant-input:focus, .ant-input-focused,
+.ant-picker-focused, .ant-select-focused .ant-select-selector {
+  border-color: #D4A574 !important;
+  box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.12) !important;
+}
+
+/* Select dropdown highlight */
+.ant-select-item-option-selected {
+  background: #fdf8f3 !important;
+}
+
+/* Date picker today */
+.ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-color: #D4A574 !important;
+}
+
+/* Spin color */
+.ant-spin-dot-item {
+  background: #D4A574 !important;
+}
+
+/* Progress bar for any loading */
+.ant-progress-bg {
+  background: #D4A574 !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #bfbfbf; }

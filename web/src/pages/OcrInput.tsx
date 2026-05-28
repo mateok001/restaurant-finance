@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Card, Button, Table, InputNumber, Input, DatePicker, Upload, message, Space, Spin, Alert, Tag, Image } from 'antd';
+import { Card, Button, Table, InputNumber, Input, Select, DatePicker, Upload, message, Space, Spin, Alert, Tag, Image } from 'antd';
 import { CameraOutlined, CheckOutlined, InboxOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import dayjs from 'dayjs';
@@ -142,9 +142,10 @@ export default function OcrInputPage() {
               { title: '数量', dataIndex: 'quantity', width: 100,
                 render: (v: number, _: any, index: number) =>
                   <InputNumber value={v} onChange={(val) => updateItem(index, 'quantity', val)} size="small" min={0} style={{ width: 80 }} /> },
-              { title: '单位', dataIndex: 'unit', width: 70,
+              { title: '单位', dataIndex: 'unit', width: 80,
                 render: (v: string, _: any, index: number) =>
-                  <Input value={v} onChange={(e) => updateItem(index, 'unit', e.target.value)} size="small" style={{ width: 60 }} /> },
+                  <Select value={v} onChange={(val) => updateItem(index, 'unit', val)} size="small" style={{ width: 70 }}
+                    options={['斤','公斤','个','箱','捆','袋','包','瓶','桶','把','只','条','份','盘','件','套'].map(u => ({ label: u, value: u }))} /> },
               { title: '单价', dataIndex: 'unitPrice', width: 100,
                 render: (v: number, _: any, index: number) =>
                   <InputNumber value={v} onChange={(val) => updateItem(index, 'unitPrice', val)} size="small" min={0} prefix="¥" style={{ width: 90 }} /> },

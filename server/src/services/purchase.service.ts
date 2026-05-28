@@ -2,6 +2,35 @@ import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { InputMethod } from '../types/enums';
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function resolveSupplier(idOrName: string): Promise<string> {
+  if (uuidRegex.test(idOrName)) {
+    const s = await prisma.supplier.findUnique({ where: { id: idOrName } });
+    if (!s) throw new AppError(404, '供应商不存在');
+    return s.id;
+  }
+  // Treat as name — look up or create
+  let supplier = await prisma.supplier.findFirst({ where: { name: idOrName } });
+  if (!supplier) {
+    supplier = await prisma.supplier.create({ data: { name: idOrName } });
+  }
+  return supplier.id;
+}
+
+async function resolveProduct(idOrName: string): Promise<string> {
+  if (uuidRegex.test(idOrName)) {
+    const p = await prisma.product.findUnique({ where: { id: idOrName } });
+    if (!p) throw new AppError(404, '商品不存在');
+    return p.id;
+  }
+  let product = await prisma.product.findFirst({ where: { name: idOrName } });
+  if (!product) {
+    product = await prisma.product.create({ data: { name: idOrName, category: 'ingredients' } });
+  }
+  return product.id;
+}
+
 export async function list(
   page: number,
   pageSize: number,
@@ -19,8 +48,8 @@ export async function list(
   if (filters?.inputMethod) where.inputMethod = filters.inputMethod;
   if (filters?.startDate || filters?.endDate) {
     where.purchaseDate = {};
-    if (filters?.startDate) where.purchaseDate.gte = new Date(filters.startDate);
-    if (filters?.endDate) where.purchaseDate.lte = new Date(filters.endDate);
+    if (filters?.startDate) where.purchaseDate.gte = new Date(`${filters.startDate}T00:00:00+08:00`);
+    if (filters?.endDate) where.purchaseDate.lte = new Date(`${filters.endDate}T23:59:59+08:00`);
   }
 
   const [items, total] = await Promise.all([
@@ -30,7 +59,7 @@ export async function list(
       take: pageSize,
       include: {
         supplier: { select: { id: true, name: true } },
-        product: { select: { id: true, name: true, unit: true } },
+        product: { select: { id: true, name: true } },
         recorder: { select: { id: true, displayName: true } },
       },
       orderBy: { purchaseDate: 'desc' },
@@ -56,6 +85,7 @@ export async function getById(id: string) {
 export async function create(data: {
   supplierId: string;
   productId: string;
+  unit?: string | null;
   quantity: number;
   unitPrice: number;
   totalAmount: number;
@@ -64,11 +94,22 @@ export async function create(data: {
   memo?: string | null;
   rawInputText?: string | null;
 }, userId: string) {
+  const supplierId = await resolveSupplier(data.supplierId);
+  const productId = await resolveProduct(data.productId);
+
   return prisma.purchase.create({
     data: {
-      ...data,
+      supplierId,
+      productId,
+      unit: data.unit || null,
+      quantity: data.quantity,
+      unitPrice: data.unitPrice,
+      totalAmount: data.totalAmount,
       purchaseDate: new Date(data.purchaseDate),
       recordedBy: userId,
+      inputMethod: data.inputMethod,
+      memo: data.memo || null,
+      rawInputText: data.rawInputText || null,
     },
   });
 }
@@ -78,6 +119,7 @@ export async function update(
   data: {
     supplierId?: string;
     productId?: string;
+    unit?: string | null;
     quantity?: number;
     unitPrice?: number;
     totalAmount?: number;
@@ -87,9 +129,9 @@ export async function update(
 ) {
   await getById(id);
   const updateData: any = { ...data };
-  if (data.purchaseDate) {
-    updateData.purchaseDate = new Date(data.purchaseDate);
-  }
+  if (data.supplierId) updateData.supplierId = await resolveSupplier(data.supplierId);
+  if (data.productId) updateData.productId = await resolveProduct(data.productId);
+  if (data.purchaseDate) updateData.purchaseDate = new Date(data.purchaseDate);
   return prisma.purchase.update({ where: { id }, data: updateData });
 }
 
@@ -112,35 +154,25 @@ export async function createFromVoice(
 ) {
   const results = [];
   for (const item of items) {
-    // 查找或创建供应商
     let supplierId: string | null = null;
     if (item.supplierName) {
       let supplier = await prisma.supplier.findFirst({
         where: { name: { contains: item.supplierName } },
       });
       if (!supplier) {
-        supplier = await prisma.supplier.create({
-          data: { name: item.supplierName },
-        });
+        supplier = await prisma.supplier.create({ data: { name: item.supplierName } });
       }
       supplierId = supplier.id;
     }
 
     if (!supplierId) throw new AppError(400, `无法确定供应商: ${item.productName}`);
 
-    // 查找或创建商品
     let product = await prisma.product.findFirst({
       where: { name: { contains: item.productName } },
     });
     if (!product) {
       product = await prisma.product.create({
-        data: {
-          name: item.productName,
-          category: 'ingredients',
-          unit: item.unit,
-          defaultPrice: item.unitPrice,
-          supplierId,
-        },
+        data: { name: item.productName, category: 'ingredients' },
       });
     }
 
@@ -148,6 +180,7 @@ export async function createFromVoice(
       data: {
         supplierId: supplierId!,
         productId: product.id,
+        unit: item.unit,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalAmount: item.quantity * item.unitPrice,
@@ -194,13 +227,7 @@ export async function createFromOcr(
     });
     if (!product) {
       product = await prisma.product.create({
-        data: {
-          name: item.productName,
-          category: 'ingredients',
-          unit: item.unit,
-          defaultPrice: item.unitPrice,
-          supplierId,
-        },
+        data: { name: item.productName, category: 'ingredients' },
       });
     }
 
@@ -208,6 +235,7 @@ export async function createFromOcr(
       data: {
         supplierId: supplierId!,
         productId: product.id,
+        unit: item.unit,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalAmount: item.totalAmount,

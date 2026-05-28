@@ -27,8 +27,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const pageSize = parseInt(req.query.pageSize as string) || 20;
     const result = await salaryService.list(page, pageSize, {
       employeeId: req.query.employeeId as string,
-      periodStart: req.query.periodStart as string,
-      periodEnd: req.query.periodEnd as string,
+      payDateStart: req.query.payDateStart as string,
+      payDateEnd: req.query.payDateEnd as string,
       payStatus: req.query.payStatus as string,
     });
     res.json(result);
@@ -54,8 +54,8 @@ router.post('/', requireAdminOrPartner, validate(salaryRecordSchema), async (req
 // POST 批量生成当月工资
 router.post('/batch', requireAdminOrPartner, validate(salaryBatchSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { periodStart, periodEnd, scheduledPayDate } = req.body;
-    const records = await salaryService.batchCreate(periodStart, periodEnd, scheduledPayDate, req.userId!);
+    const { periodStart, periodEnd } = req.body;
+    const records = await salaryService.batchCreate(periodStart, periodEnd, req.userId!);
     res.status(201).json(records);
   } catch (err) { next(err); }
 });
@@ -72,6 +72,14 @@ router.put('/:id', requireAdminOrPartner, async (req: Request, res: Response, ne
 router.patch('/:id/pay', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const record = await salaryService.markAsPaid(req.params.id);
+    res.json(record);
+  } catch (err) { next(err); }
+});
+
+// PATCH 撤销已发放
+router.patch('/:id/unpay', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const record = await salaryService.unmarkPaid(req.params.id);
     res.json(record);
   } catch (err) { next(err); }
 });

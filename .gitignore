@@ -6,3 +6,27 @@ dist/
 .DS_Store
 *.log
 .turbo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Uploads / media
+server/uploads/
+server/screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Docker
+docker-data/
+
+# Build artifacts
+*.tsbuildinfo

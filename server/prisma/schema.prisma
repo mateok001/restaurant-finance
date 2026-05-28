@@ -52,23 +52,18 @@ model Supplier {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  products  Product[]
   purchases Purchase[]
 
   @@map("suppliers")
 }
 
 model Product {
-  id           String   @id @default(uuid())
-  name         String
-  category     String   @default("ingredients")
-  unit         String   @default("斤")
-  defaultPrice Float?   @map("default_price")
-  supplierId   String?  @map("supplier_id")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  name      String
+  category  String   @default("ingredients")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  supplier  Supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   purchases Purchase[]
 
   @@map("products")
@@ -79,6 +74,7 @@ model Purchase {
   id             String   @id @default(uuid())
   supplierId     String   @map("supplier_id")
   productId      String   @map("product_id")
+  unit           String?
   quantity       Float    @default(0)
   unitPrice      Float    @map("unit_price") @default(0)
   totalAmount    Float    @map("total_amount") @default(0)
@@ -151,7 +147,7 @@ model SalaryRecord {
   attendanceStatus String    @map("attendance_status") @default("{}")
   grossSalary      Float     @map("gross_salary") @default(0)
   netSalary        Float     @map("net_salary") @default(0)
-  scheduledPayDate DateTime  @map("scheduled_pay_date")
+  hireDate        DateTime  @map("hire_date")
   actualPayDate    DateTime? @map("actual_pay_date")
   payStatus        String    @default("pending") @map("pay_status")
   recordedBy       String    @map("recorded_by")

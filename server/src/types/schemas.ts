@@ -27,15 +27,13 @@ export const supplierSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(1, '商品名称必填').max(100),
   category: z.enum(['ingredients', 'beverages', 'seasonings', 'packaging', 'other']),
-  unit: z.string().min(1).max(20),
-  defaultPrice: z.number().positive('价格必须大于0').optional().nullable(),
-  supplierId: z.string().uuid().optional().nullable(),
 });
 
 // ========== 采购记录 ==========
 export const purchaseSchema = z.object({
-  supplierId: z.string().uuid('供应商ID无效'),
-  productId: z.string().uuid('商品ID无效'),
+  supplierId: z.string().min(1, '供应商必填'),
+  productId: z.string().min(1, '商品必填'),
+  unit: z.string().optional().nullable(),
   quantity: z.number().positive('数量必须大于0'),
   unitPrice: z.number().positive('单价必须大于0'),
   totalAmount: z.number().positive('总金额必须大于0'),
@@ -54,7 +52,7 @@ export const purchaseOcrSchema = z.object({
 
 // ========== 支出记录 ==========
 export const expenseSchema = z.object({
-  category: z.enum(['salary', 'rent', 'utilities', 'gas', 'maintenance', 'other']),
+  category: z.string().min(1, '支出类别必填').max(50),
   amount: z.number().positive('金额必须大于0'),
   expenseDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
   description: z.string().optional().nullable(),
@@ -63,8 +61,8 @@ export const expenseSchema = z.object({
 // ========== 员工 ==========
 export const employeeSchema = z.object({
   name: z.string().min(1, '姓名必填').max(50),
-  idCardNumber: z.string().min(15, '身份证号格式不正确').max(18),
-  bankCardNumber: z.string().min(16, '银行卡号格式不正确').max(30),
+  idCardNumber: z.string().max(18).optional().nullable().default(''),
+  bankCardNumber: z.string().max(30).optional().nullable().default(''),
   phone: z.string().min(10, '电话号码格式不正确').max(20),
   baseSalary: z.number().positive('基本工资必须大于0'),
   scheduledPayDay: z.number().int().min(1).max(31),
@@ -81,20 +79,16 @@ export const salaryRecordSchema = z.object({
   bonus: z.number().min(0).default(0),
   deduction: z.number().min(0).default(0),
   attendanceStatus: z.object({
-    fullAttendance: z.boolean().default(true),
-    workDays: z.number().int().min(0).default(0),
-    lateDays: z.number().int().min(0).default(0),
-    absentDays: z.number().int().min(0).default(0),
-    leaveDays: z.number().int().min(0).default(0),
+    absentDays: z.number().min(0).default(0),
+    fullAttendanceBonus: z.number().min(0).default(0),
   }),
-  scheduledPayDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
+  actualPayDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效').optional().nullable(),
   memo: z.string().optional().nullable(),
 });
 
 export const salaryBatchSchema = z.object({
   periodStart: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
   periodEnd: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
-  scheduledPayDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
 });
 
 // ========== 收入渠道 ==========

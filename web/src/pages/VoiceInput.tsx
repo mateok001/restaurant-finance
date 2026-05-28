@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Card, Button, Table, InputNumber, Input, DatePicker, message, Space, Spin, Alert, Tag } from 'antd';
+import { Card, Button, Table, InputNumber, Input, Select, DatePicker, message, Space, Spin, Alert, Tag } from 'antd';
 import { AudioOutlined, AudioMutedOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../services/api';
@@ -150,9 +150,10 @@ export default function VoiceInputPage() {
                 ),
               },
               {
-                title: '单位', dataIndex: 'unit', width: 70,
+                title: '单位', dataIndex: 'unit', width: 80,
                 render: (v: string, _: any, index: number) => (
-                  <Input value={v} onChange={(e) => updateItem(index, 'unit', e.target.value)} size="small" style={{ width: 60 }} />
+                  <Select value={v} onChange={(val) => updateItem(index, 'unit', val)} size="small" style={{ width: 70 }}
+                    options={['斤','公斤','个','箱','捆','袋','包','瓶','桶','把','只','条','份','盘','件','套'].map(u => ({ label: u, value: u }))} />
                 ),
               },
               {

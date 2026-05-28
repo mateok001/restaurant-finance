@@ -64,8 +64,8 @@ router.get('/daily-revenue', async (req: Request, res: Response, next: NextFunct
     if (req.query.channelId) where.channelId = req.query.channelId;
     if (req.query.startDate || req.query.endDate) {
       where.revenueDate = {};
-      if (req.query.startDate) where.revenueDate.gte = new Date(req.query.startDate as string);
-      if (req.query.endDate) where.revenueDate.lte = new Date(req.query.endDate as string);
+      if (req.query.startDate) where.revenueDate.gte = new Date(`${req.query.startDate}T00:00:00+08:00`);
+      if (req.query.endDate) where.revenueDate.lte = new Date(`${req.query.endDate}T23:59:59+08:00`);
     }
 
     const [items, total] = await Promise.all([

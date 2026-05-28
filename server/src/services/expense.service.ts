@@ -15,8 +15,8 @@ export async function list(
   if (filters?.category) where.category = filters.category;
   if (filters?.startDate || filters?.endDate) {
     where.expenseDate = {};
-    if (filters?.startDate) where.expenseDate.gte = new Date(filters.startDate);
-    if (filters?.endDate) where.expenseDate.lte = new Date(filters.endDate);
+    if (filters?.startDate) where.expenseDate.gte = new Date(`${filters.startDate}T00:00:00+08:00`);
+    if (filters?.endDate) where.expenseDate.lte = new Date(`${filters.endDate}T23:59:59+08:00`);
   }
 
   const [items, total] = await Promise.all([

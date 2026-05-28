@@ -6,16 +6,24 @@ export async function list(
   pageSize: number,
   filters?: {
     employeeId?: string;
-    periodStart?: string;
-    periodEnd?: string;
+    payDateStart?: string;
+    payDateEnd?: string;
     payStatus?: string;
   },
 ) {
   const where: any = {};
   if (filters?.employeeId) where.employeeId = filters.employeeId;
   if (filters?.payStatus) where.payStatus = filters.payStatus;
-  if (filters?.periodStart) where.periodStart = { gte: new Date(filters.periodStart) };
-  if (filters?.periodEnd) where.periodEnd = { lte: new Date(filters.periodEnd) };
+  if (filters?.payDateStart || filters?.payDateEnd) {
+    const dateFilter: any = {};
+    if (filters?.payDateStart) dateFilter.gte = new Date(filters.payDateStart);
+    if (filters?.payDateEnd) dateFilter.lte = new Date(filters.payDateEnd);
+    // Filter by actualPayDate when set, fall back to periodEnd for pending records
+    where.OR = [
+      { actualPayDate: dateFilter },
+      { actualPayDate: null, periodEnd: dateFilter },
+    ];
+  }
 
   const [items, total] = await Promise.all([
     prisma.salaryRecord.findMany({
@@ -23,7 +31,7 @@ export async function list(
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
-        employee: { select: { id: true, name: true, position: true } },
+        employee: { select: { id: true, name: true, position: true, phone: true, idCardNumber: true } },
         recorder: { select: { id: true, displayName: true } },
       },
       orderBy: { periodStart: 'desc' },
@@ -45,6 +53,33 @@ export async function getById(id: string) {
   return record;
 }
 
+function getMonthRange(dateStr: string): { monthStart: Date; monthEnd: Date } {
+  const d = new Date(dateStr);
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  return {
+    monthStart: new Date(year, month, 1),
+    monthEnd: new Date(year, month + 1, 0, 23, 59, 59, 999),
+  };
+}
+
+async function checkDuplicateInMonth(employeeId: string, payDateStr: string, excludeId?: string) {
+  const { monthStart, monthEnd } = getMonthRange(payDateStr);
+  const where: any = {
+    employeeId,
+    id: excludeId ? { not: excludeId } : undefined,
+    OR: [
+      { actualPayDate: { gte: monthStart, lte: monthEnd } },
+      { actualPayDate: null, periodEnd: { gte: monthStart, lte: monthEnd } },
+    ],
+  };
+  const existing = await prisma.salaryRecord.findFirst({ where, include: { employee: { select: { name: true } } } });
+  if (existing) {
+    const monthLabel = `${monthStart.getFullYear()}年${monthStart.getMonth() + 1}月`;
+    throw new AppError(409, `${existing.employee.name} 在${monthLabel}已有工资记录，不可重复添加`);
+  }
+}
+
 export async function create(data: {
   employeeId: string;
   periodStart: string;
@@ -52,14 +87,20 @@ export async function create(data: {
   bonus: number;
   deduction: number;
   attendanceStatus: any;
-  scheduledPayDate: string;
+  actualPayDate?: string | null;
   memo?: string | null;
 }, userId: string) {
   const employee = await prisma.employee.findUnique({ where: { id: data.employeeId } });
   if (!employee) throw new AppError(404, '员工不存在');
 
-  const grossSalary = employee.baseSalary + data.bonus - data.deduction;
-  const netSalary = grossSalary;
+  const effectivePayDate = data.actualPayDate || data.periodEnd;
+  await checkDuplicateInMonth(data.employeeId, effectivePayDate);
+
+  const absentDays = data.attendanceStatus?.absentDays ?? 0;
+  const rawFullAttendanceBonus = data.attendanceStatus?.fullAttendanceBonus ?? 0;
+  const fullAttendanceBonus = absentDays === 0 ? rawFullAttendanceBonus : 0;
+  const adjustment = employee.baseSalary / 30 * (2 - absentDays);
+  const netSalary = Math.round((employee.baseSalary + adjustment + fullAttendanceBonus + data.bonus - data.deduction) * 100) / 100;
 
   return prisma.salaryRecord.create({
     data: {
@@ -69,10 +110,11 @@ export async function create(data: {
       baseSalary: employee.baseSalary,
       bonus: data.bonus,
       deduction: data.deduction,
-      attendanceStatus: data.attendanceStatus,
-      grossSalary,
+      attendanceStatus: JSON.stringify(data.attendanceStatus),
+      grossSalary: netSalary,
       netSalary,
-      scheduledPayDate: new Date(data.scheduledPayDate),
+      hireDate: new Date(employee.hireDate),
+      actualPayDate: data.actualPayDate ? new Date(data.actualPayDate) : null,
       recordedBy: userId,
       memo: data.memo || null,
     },
@@ -82,7 +124,6 @@ export async function create(data: {
 export async function batchCreate(
   periodStart: string,
   periodEnd: string,
-  scheduledPayDate: string,
   userId: string,
 ) {
   const activeEmployees = await prisma.employee.findMany({
@@ -115,16 +156,13 @@ export async function batchCreate(
         baseSalary: emp.baseSalary,
         bonus: 0,
         deduction: 0,
-        attendanceStatus: {
-          fullAttendance: true,
-          workDays: 0,
-          lateDays: 0,
+        attendanceStatus: JSON.stringify({
           absentDays: 0,
-          leaveDays: 0,
-        },
+          fullAttendanceBonus: 0,
+        }),
         grossSalary: emp.baseSalary,
         netSalary: emp.baseSalary,
-        scheduledPayDate: new Date(scheduledPayDate),
+        hireDate: new Date(emp.hireDate),
         recordedBy: userId,
       },
     });
@@ -140,8 +178,7 @@ export async function update(
     bonus?: number;
     deduction?: number;
     attendanceStatus?: any;
-    netSalary?: number;
-    scheduledPayDate?: string;
+    actualPayDate?: string | null;
     memo?: string | null;
   },
 ) {
@@ -150,20 +187,32 @@ export async function update(
     throw new AppError(400, '已发放的工资记录不可修改');
   }
 
+  // Check duplicate month if actualPayDate changed
+  if (data.actualPayDate !== undefined) {
+    const effectivePayDate = data.actualPayDate || record.periodEnd.toISOString();
+    await checkDuplicateInMonth(record.employeeId, effectivePayDate, id);
+  }
+
   const baseSalary = record.baseSalary;
   const bonus = data.bonus !== undefined ? data.bonus : record.bonus;
   const deduction = data.deduction !== undefined ? data.deduction : record.deduction;
-  const grossSalary = baseSalary + bonus - deduction;
-  const netSalary = data.netSalary !== undefined ? data.netSalary : grossSalary;
+  const attendanceStatus = data.attendanceStatus !== undefined ? data.attendanceStatus : record.attendanceStatus;
+
+  const parsedAttendance = typeof attendanceStatus === 'string' ? JSON.parse(attendanceStatus) : attendanceStatus;
+  const absentDays = parsedAttendance?.absentDays ?? 0;
+  const rawFullAttendanceBonus = parsedAttendance?.fullAttendanceBonus ?? 0;
+  const fullAttendanceBonus = absentDays === 0 ? rawFullAttendanceBonus : 0;
+  const adjustment = baseSalary / 30 * (2 - absentDays);
+  const netSalary = Math.round((baseSalary + adjustment + fullAttendanceBonus + bonus - deduction) * 100) / 100;
 
   const updateData: any = {
     bonus,
     deduction,
-    grossSalary,
+    attendanceStatus: data.attendanceStatus !== undefined ? JSON.stringify(data.attendanceStatus) : undefined,
+    grossSalary: netSalary,
     netSalary,
   };
-  if (data.attendanceStatus) updateData.attendanceStatus = data.attendanceStatus;
-  if (data.scheduledPayDate) updateData.scheduledPayDate = new Date(data.scheduledPayDate);
+  if (data.actualPayDate !== undefined) updateData.actualPayDate = data.actualPayDate ? new Date(data.actualPayDate) : null;
   if (data.memo !== undefined) updateData.memo = data.memo;
 
   return prisma.salaryRecord.update({ where: { id }, data: updateData });
@@ -179,7 +228,7 @@ export async function markAsPaid(id: string) {
     where: { id },
     data: {
       payStatus: 'paid',
-      actualPayDate: new Date(),
+      actualPayDate: record.actualPayDate || new Date(),
     },
   });
 
@@ -199,6 +248,21 @@ export async function markAsPaid(id: string) {
   });
 
   return updatedRecord;
+}
+
+export async function unmarkPaid(id: string) {
+  const record = await getById(id);
+  if (record.payStatus !== 'paid') {
+    throw new AppError(400, '只有已发放的工资记录可以撤销');
+  }
+
+  // Delete the auto-created expense record
+  await prisma.expense.deleteMany({ where: { salaryRecordId: id } });
+
+  return prisma.salaryRecord.update({
+    where: { id },
+    data: { payStatus: 'pending' },
+  });
 }
 
 export async function remove(id: string) {
