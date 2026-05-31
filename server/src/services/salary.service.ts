@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
 
@@ -224,30 +225,31 @@ export async function markAsPaid(id: string) {
     throw new AppError(400, '该工资已发放');
   }
 
-  const updatedRecord = await prisma.salaryRecord.update({
-    where: { id },
-    data: {
-      payStatus: 'paid',
-      actualPayDate: record.actualPayDate || new Date(),
-    },
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const updatedRecord = await tx.salaryRecord.update({
+      where: { id },
+      data: {
+        payStatus: 'paid',
+        actualPayDate: record.actualPayDate || new Date(),
+      },
+    });
+
+    const employee = await tx.employee.findUnique({ where: { id: record.employeeId } });
+
+    // 自动创建支出记录
+    await tx.expense.create({
+      data: {
+        category: 'salary',
+        amount: record.netSalary,
+        expenseDate: new Date(),
+        recordedBy: record.recordedBy,
+        description: `${employee?.name || '员工'} ${record.periodStart.toISOString().slice(0, 10)}~${record.periodEnd.toISOString().slice(0, 10)} 工资`,
+        salaryRecordId: id,
+      },
+    });
+
+    return updatedRecord;
   });
-
-  const employee = await prisma.employee.findUnique({ where: { id: record.employeeId } });
-
-  // 自动创建支出记录
-  await prisma.expense.create({
-    data: {
-      category: 'salary',
-      amount: record.netSalary,
-      expenseDate: new Date(),
-      recordedBy: record.recordedBy,
-      description: `${employee?.name || '员工'} ${record.periodStart.toISOString().slice(0, 10)}~${record.periodEnd.toISOString().slice(0, 10)} 工资`,
-      salaryRecordId: id,
-    },
-    // @ts-ignore - salaryRecordId is valid
-  });
-
-  return updatedRecord;
 }
 
 export async function unmarkPaid(id: string) {
@@ -256,12 +258,14 @@ export async function unmarkPaid(id: string) {
     throw new AppError(400, '只有已发放的工资记录可以撤销');
   }
 
-  // Delete the auto-created expense record
-  await prisma.expense.deleteMany({ where: { salaryRecordId: id } });
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // Delete the auto-created expense record
+    await tx.expense.deleteMany({ where: { salaryRecordId: id } });
 
-  return prisma.salaryRecord.update({
-    where: { id },
-    data: { payStatus: 'pending' },
+    return tx.salaryRecord.update({
+      where: { id },
+      data: { payStatus: 'pending' },
+    });
   });
 }
 

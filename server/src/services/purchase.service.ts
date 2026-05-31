@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { InputMethod } from '../types/enums';
@@ -152,47 +153,49 @@ export async function createFromVoice(
   rawText: string,
   userId: string,
 ) {
-  const results = [];
-  for (const item of items) {
-    let supplierId: string | null = null;
-    if (item.supplierName) {
-      let supplier = await prisma.supplier.findFirst({
-        where: { name: { contains: item.supplierName } },
-      });
-      if (!supplier) {
-        supplier = await prisma.supplier.create({ data: { name: item.supplierName } });
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const results = [];
+    for (const item of items) {
+      let supplierId: string | null = null;
+      if (item.supplierName) {
+        let supplier = await tx.supplier.findFirst({
+          where: { name: { equals: item.supplierName } },
+        });
+        if (!supplier) {
+          supplier = await tx.supplier.create({ data: { name: item.supplierName } });
+        }
+        supplierId = supplier.id;
       }
-      supplierId = supplier.id;
-    }
 
-    if (!supplierId) throw new AppError(400, `无法确定供应商: ${item.productName}`);
+      if (!supplierId) throw new AppError(400, `无法确定供应商: ${item.productName}`);
 
-    let product = await prisma.product.findFirst({
-      where: { name: { contains: item.productName } },
-    });
-    if (!product) {
-      product = await prisma.product.create({
-        data: { name: item.productName, category: 'ingredients' },
+      let product = await tx.product.findFirst({
+        where: { name: { equals: item.productName } },
       });
-    }
+      if (!product) {
+        product = await tx.product.create({
+          data: { name: item.productName, category: 'ingredients' },
+        });
+      }
 
-    const purchase = await prisma.purchase.create({
-      data: {
-        supplierId: supplierId!,
-        productId: product.id,
-        unit: item.unit,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalAmount: item.quantity * item.unitPrice,
-        purchaseDate: new Date(purchaseDate),
-        recordedBy: userId,
-        inputMethod: 'voice',
-        rawInputText: rawText,
-      },
-    });
-    results.push(purchase);
-  }
-  return results;
+      const purchase = await tx.purchase.create({
+        data: {
+          supplierId: supplierId!,
+          productId: product.id,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalAmount: Math.round(item.quantity * item.unitPrice * 100) / 100,
+          purchaseDate: new Date(purchaseDate),
+          recordedBy: userId,
+          inputMethod: 'voice',
+          rawInputText: rawText,
+        },
+      });
+      results.push(purchase);
+    }
+    return results;
+  });
 }
 
 export async function createFromOcr(
@@ -208,46 +211,48 @@ export async function createFromOcr(
   rawText: string,
   userId: string,
 ) {
-  const results = [];
-  for (const item of items) {
-    let supplierId: string | null = null;
-    if (item.supplierName) {
-      let supplier = await prisma.supplier.findFirst({
-        where: { name: { contains: item.supplierName } },
-      });
-      if (!supplier) {
-        supplier = await prisma.supplier.create({ data: { name: item.supplierName } });
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const results = [];
+    for (const item of items) {
+      let supplierId: string | null = null;
+      if (item.supplierName) {
+        let supplier = await tx.supplier.findFirst({
+          where: { name: { equals: item.supplierName } },
+        });
+        if (!supplier) {
+          supplier = await tx.supplier.create({ data: { name: item.supplierName } });
+        }
+        supplierId = supplier.id;
       }
-      supplierId = supplier.id;
-    }
-    if (!supplierId) throw new AppError(400, `无法确定供应商: ${item.productName}`);
+      if (!supplierId) throw new AppError(400, `无法确定供应商: ${item.productName}`);
 
-    let product = await prisma.product.findFirst({
-      where: { name: { contains: item.productName } },
-    });
-    if (!product) {
-      product = await prisma.product.create({
-        data: { name: item.productName, category: 'ingredients' },
+      let product = await tx.product.findFirst({
+        where: { name: { equals: item.productName } },
       });
-    }
+      if (!product) {
+        product = await tx.product.create({
+          data: { name: item.productName, category: 'ingredients' },
+        });
+      }
 
-    const purchase = await prisma.purchase.create({
-      data: {
-        supplierId: supplierId!,
-        productId: product.id,
-        unit: item.unit,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalAmount: item.totalAmount,
-        purchaseDate: new Date(purchaseDate),
-        recordedBy: userId,
-        inputMethod: 'ocr',
-        rawInputText: rawText,
-      },
-    });
-    results.push(purchase);
-  }
-  return results;
+      const purchase = await tx.purchase.create({
+        data: {
+          supplierId: supplierId!,
+          productId: product.id,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalAmount: Math.round(item.totalAmount * 100) / 100,
+          purchaseDate: new Date(purchaseDate),
+          recordedBy: userId,
+          inputMethod: 'ocr',
+          rawInputText: rawText,
+        },
+      });
+      results.push(purchase);
+    }
+    return results;
+  });
 }
 
 export async function uploadInvoice(id: string, fileUrl: string) {

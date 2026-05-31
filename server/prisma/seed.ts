@@ -74,13 +74,13 @@ async function main() {
   const suppliers = await prisma.supplier.findMany();
   if (suppliers.length > 0) {
     const productData = [
-      { name: '土豆', category: 'ingredients', unit: '斤', supplierId: suppliers[0].id },
-      { name: '白菜', category: 'ingredients', unit: '斤', supplierId: suppliers[0].id },
-      { name: '五花肉', category: 'ingredients', unit: '斤', supplierId: suppliers[1].id },
-      { name: '排骨', category: 'ingredients', unit: '斤', supplierId: suppliers[1].id },
-      { name: '基围虾', category: 'ingredients', unit: '斤', supplierId: suppliers[2].id },
-      { name: '金龙鱼食用油', category: 'seasonings', unit: '桶', supplierId: suppliers[0].id },
-      { name: '青岛啤酒', category: 'beverages', unit: '箱', supplierId: suppliers[0].id },
+      { name: '土豆', category: 'ingredients' },
+      { name: '白菜', category: 'ingredients' },
+      { name: '五花肉', category: 'ingredients' },
+      { name: '排骨', category: 'ingredients' },
+      { name: '基围虾', category: 'ingredients' },
+      { name: '金龙鱼食用油', category: 'seasonings' },
+      { name: '青岛啤酒', category: 'beverages' },
     ];
     for (const p of productData) {
       const existing = await prisma.product.findFirst({ where: { name: p.name } });

@@ -13,8 +13,13 @@ export default function LoginPage() {
   const onFinish = async (values: { username: string; password: string; remember: boolean }) => {
     setLoading(true);
     try {
-      const res = await api.post('/auth/login', values);
+      const { remember, ...credentials } = values;
+      const res = await api.post('/auth/login', credentials);
       const { accessToken, refreshToken, user } = res.data;
+      if (!accessToken || !refreshToken) {
+        message.error('登录响应缺少令牌，请联系管理员');
+        return;
+      }
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       setUser(user);

@@ -34,7 +34,7 @@ const menuItems: MenuProps['items'] = [
     ],
   },
   {
-    key: 'expenses',
+    key: '/expenses',
     icon: <ShoppingOutlined />,
     label: '支出管理',
     children: [
@@ -47,7 +47,7 @@ const menuItems: MenuProps['items'] = [
   { key: '/suppliers', icon: <ShopOutlined />, label: '供应商管理' },
   { key: '/products', icon: <AppstoreOutlined />, label: '商品管理' },
   {
-    key: 'staff',
+    key: '/staff',
     icon: <TeamOutlined />,
     label: '员工管理',
     children: [
@@ -56,7 +56,7 @@ const menuItems: MenuProps['items'] = [
     ],
   },
   {
-    key: 'reports',
+    key: '/reports',
     icon: <BarChartOutlined />,
     label: '报表中心',
     children: [
@@ -135,7 +135,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           theme="dark"
           mode="inline"
           selectedKeys={selectedKeys}
-          defaultOpenKeys={['/revenue', 'expenses', 'staff', 'reports']}
+          defaultOpenKeys={['/revenue', '/expenses', '/staff', '/reports']}
           onClick={handleMenuClick}
           items={menuItems}
           style={{

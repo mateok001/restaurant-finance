@@ -1,14 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireAdminOrPartner } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { salaryRecordSchema, salaryBatchSchema } from '../types/schemas';
+import { salaryRecordSchema, salaryBatchSchema, salaryUpdateSchema } from '../types/schemas';
 import * as salaryService from '../services/salary.service';
 
 const router = Router();
 router.use(authenticate);
 
 // GET 工资报表（必须在 /report 之前，否则会被 /:id 匹配）
-router.get('/report', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/report', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await salaryService.getReport({
       periodStart: req.query.periodStart as string,
@@ -21,7 +21,7 @@ router.get('/report', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 // GET 工资记录列表
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
@@ -36,7 +36,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // GET 工资详情
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const record = await salaryService.getById(req.params.id);
     res.json(record);
@@ -61,7 +61,7 @@ router.post('/batch', requireAdminOrPartner, validate(salaryBatchSchema), async 
 });
 
 // PUT 修改工资记录
-router.put('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireAdminOrPartner, validate(salaryUpdateSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const record = await salaryService.update(req.params.id, req.body);
     res.json(record);

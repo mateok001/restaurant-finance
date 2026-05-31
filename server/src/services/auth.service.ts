@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { Prisma } from '@prisma/client';
 import { config } from '../config';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
@@ -116,7 +117,7 @@ export async function refreshAccessToken(oldRefreshToken: string) {
   });
 
   if (!session) {
-    // 刷新令牌被盗用，删除该用户所有会话
+    // 刷新令牌被盗用或已过期，删除该用户所有会话
     await prisma.session.deleteMany({ where: { userId: payload.userId } });
     throw new AppError(401, '刷新令牌已失效，请重新登录');
   }
@@ -126,18 +127,30 @@ export async function refreshAccessToken(oldRefreshToken: string) {
     throw new AppError(401, '用户不存在');
   }
 
-  // 删除旧会话，生成新 token
-  await prisma.session.delete({ where: { id: session.id } });
   const tokens = generateTokens(user.id, user.role, user.displayName);
 
-  // 创建新会话
-  await prisma.session.create({
-    data: {
-      userId: user.id,
-      refreshToken: tokens.refreshToken,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      deviceInfo: session.deviceInfo,
-    },
+  // 在事务中原子地替换 session，避免竞态条件
+  // 使用 deleteMany 而非 delete 避免 P2025 错误（并发刷新）
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const deleted = await tx.session.deleteMany({
+      where: { id: session.id, refreshToken: oldRefreshToken },
+    });
+    if (deleted.count === 0) {
+      // 会话已被其他请求删除（token 可能被盗用）
+      await tx.session.deleteMany({ where: { userId: user.id } });
+      throw new AppError(401, '刷新令牌已失效，请重新登录');
+    }
+    // 创建新会话，保留原始 remember 设置（根据原会话过期时间推断）
+    const originalDuration = session.expiresAt.getTime() - session.createdAt.getTime();
+    const expiresAt = new Date(Date.now() + originalDuration);
+    await tx.session.create({
+      data: {
+        userId: user.id,
+        refreshToken: tokens.refreshToken,
+        expiresAt,
+        deviceInfo: session.deviceInfo,
+      },
+    });
   });
 
   return tokens;
@@ -145,6 +158,14 @@ export async function refreshAccessToken(oldRefreshToken: string) {
 
 export async function logout(refreshToken: string) {
   await prisma.session.deleteMany({ where: { refreshToken } });
+}
+
+// 清理过期会话（建议通过定时任务调用）
+export async function cleanupExpiredSessions() {
+  const result = await prisma.session.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+  return result.count;
 }
 
 export async function getProfile(userId: string) {
@@ -175,4 +196,34 @@ export async function changePassword(userId: string, oldPassword: string, newPas
 
   // 清除所有会话，强制重新登录
   await prisma.session.deleteMany({ where: { userId } });
+}
+
+export async function listUsers() {
+  return prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      role: true,
+      avatarUrl: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function deleteUser(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AppError(404, '用户不存在');
+  if (user.role === 'admin') {
+    // 检查是否是最后一个 admin
+    const adminCount = await prisma.user.count({ where: { role: 'admin' } });
+    if (adminCount <= 1) {
+      throw new AppError(400, '不能删除最后一个管理员账户');
+    }
+  }
+  // 清除用户会话
+  await prisma.session.deleteMany({ where: { userId } });
+  // 删除用户
+  await prisma.user.delete({ where: { id: userId } });
 }

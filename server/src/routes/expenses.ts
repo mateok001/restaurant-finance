@@ -2,14 +2,22 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { authenticate, requireAdminOrPartner } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { expenseSchema } from '../types/schemas';
+import { expenseSchema, expenseUpdateSchema } from '../types/schemas';
 import * as expenseService from '../services/expense.service';
 import * as fileService from '../services/file.service';
 
 const router = Router();
 router.use(authenticate);
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+const uploadInvoice = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('发票文件格式不支持，仅支持 JPEG/PNG/WebP/PDF'));
+  },
+});
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -38,7 +46,7 @@ router.post('/', requireAdminOrPartner, validate(expenseSchema), async (req: Req
   } catch (err) { next(err); }
 });
 
-router.put('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:id', requireAdminOrPartner, validate(expenseUpdateSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const expense = await expenseService.update(req.params.id, req.body);
     res.json(expense);
@@ -52,7 +60,7 @@ router.delete('/:id', requireAdminOrPartner, async (req: Request, res: Response,
   } catch (err) { next(err); }
 });
 
-router.post('/:id/invoice', requireAdminOrPartner, upload.single('invoice'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/invoice', requireAdminOrPartner, uploadInvoice.single('invoice'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.file) {
       res.status(400).json({ error: '请上传发票文件' });

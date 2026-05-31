@@ -19,35 +19,53 @@ export default function EmployeesPage() {
   const fetchData = () => {
     setLoading(true);
     api.get('/employees', { params: { pageSize: 100 } })
-      .then((r) => setData(r.data)).finally(() => setLoading(false));
+      .then((r) => setData(r.data))
+      .catch((err) => {
+        message.error('加载员工数据失败');
+        console.error('Employees fetch error:', err);
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchData(); }, []);
 
   const handleSubmit = async (values: any) => {
-    const payload = { ...values, hireDate: values.hireDate.format('YYYY-MM-DD') };
-    if (editing) {
-      await api.put(`/employees/${editing}`, payload);
-      message.success('更新成功');
-    } else {
-      await api.post('/employees', payload);
-      message.success('添加成功');
+    try {
+      const payload = { ...values, hireDate: values.hireDate.format('YYYY-MM-DD') };
+      if (editing) {
+        await api.put(`/employees/${editing}`, payload);
+        message.success('更新成功');
+      } else {
+        await api.post('/employees', payload);
+        message.success('添加成功');
+      }
+      setModalOpen(false); setEditing(null); form.resetFields(); fetchData();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '操作失败');
     }
-    setModalOpen(false); setEditing(null); form.resetFields(); fetchData();
   };
 
   const toggleStatus = async (id: string) => {
-    await api.patch(`/employees/${id}/status`);
-    message.success('状态已更新');
-    fetchData();
+    try {
+      await api.patch(`/employees/${id}/status`);
+      message.success('状态已更新');
+      fetchData();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '状态更新失败');
+    }
   };
 
   const handleEdit = async (record: any) => {
-    setEditing(record.id);
-    setShowFull(true);
-    const full = await api.get(`/employees/${record.id}`, { params: { showFull: true } });
-    form.setFieldsValue({ ...full.data, hireDate: dayjs(full.data.hireDate) });
-    setModalOpen(true);
+    try {
+      setEditing(record.id);
+      setShowFull(true);
+      const full = await api.get(`/employees/${record.id}`, { params: { showFull: true } });
+      form.setFieldsValue({ ...full.data, hireDate: dayjs(full.data.hireDate) });
+      setModalOpen(true);
+    } catch (err: any) {
+      message.error('加载员工详情失败');
+      console.error('Employee edit fetch error:', err);
+    }
   };
 
   const columns = [

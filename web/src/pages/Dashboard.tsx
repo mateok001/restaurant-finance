@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Row, Col, Card, Statistic, Spin, Button, Space, Table, Tag } from 'antd';
+import { Row, Col, Card, Statistic, Spin, Button, Space, Table, Tag, message } from 'antd';
 import {
   DollarOutlined, ShoppingOutlined, RiseOutlined,
   AudioOutlined, CameraOutlined, EditOutlined,
@@ -35,7 +35,10 @@ export default function DashboardPage() {
       setTrends(trendsRes.data);
       setRecentRevenue(revenueRes.data.items || []);
       setRecentExpenses(expensesRes.data.items || []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((err) => {
+      message.error('加载仪表盘数据失败，请稍后重试');
+      console.error('Dashboard fetch error:', err);
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />;

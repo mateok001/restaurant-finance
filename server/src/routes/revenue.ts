@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireAdminOrPartner } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { revenueChannelSchema, dailyRevenueSchema } from '../types/schemas';
+import { revenueChannelSchema, dailyRevenueSchema, dailyRevenueUpdateSchema } from '../types/schemas';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
 
@@ -98,15 +98,20 @@ router.post('/daily-revenue', requireAdminOrPartner, validate(dailyRevenueSchema
   } catch (err) { next(err); }
 });
 
-router.put('/daily-revenue/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
+router.put('/daily-revenue/:id', requireAdminOrPartner, validate(dailyRevenueUpdateSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const existing = await prisma.dailyRevenue.findUnique({ where: { id: req.params.id } });
     if (!existing) {
       res.status(404).json({ error: '收入记录不存在' });
       return;
     }
-    const updateData: any = { ...req.body };
-    if (req.body.revenueDate) updateData.revenueDate = new Date(req.body.revenueDate);
+    // 仅允许更新白名单字段，防止覆盖 recordedBy 等敏感字段
+    const { channelId, amount, revenueDate, memo } = req.body;
+    const updateData: any = {};
+    if (channelId !== undefined) updateData.channelId = channelId;
+    if (amount !== undefined) updateData.amount = amount;
+    if (revenueDate !== undefined) updateData.revenueDate = new Date(revenueDate);
+    if (memo !== undefined) updateData.memo = memo;
     const revenue = await prisma.dailyRevenue.update({
       where: { id: req.params.id },
       data: updateData,

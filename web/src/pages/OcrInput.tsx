@@ -19,7 +19,11 @@ export default function OcrInputPage() {
   const processImage = async (file: File) => {
     // Generate preview
     const reader = new FileReader();
-    reader.onload = (e) => setPreviewImage(e.target?.result as string);
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') setPreviewImage(result);
+    };
+    reader.onerror = () => message.error('图片读取失败，请重试');
     reader.readAsDataURL(file);
 
     setProcessing(true);
@@ -36,14 +40,14 @@ export default function OcrInputPage() {
       setItems(res.data.parsedItems || []);
       setWarnings(res.data.validationWarnings || []);
     } catch (err: any) {
-      // Fallback demo mode
-      message.info('OCR服务未部署，使用模拟演示模式');
-      setRawText('品名 | 数量 | 单位 | 单价 | 金额\n土豆 | 50 | 斤 | 2.5 | 125\n五花肉 | 30 | 斤 | 16 | 480');
-      setItems([
-        { productName: '土豆', supplierName: '', quantity: 50, unit: '斤', unitPrice: 2.5, totalAmount: 125 },
-        { productName: '五花肉', supplierName: '', quantity: 30, unit: '斤', unitPrice: 16, totalAmount: 480 },
-      ]);
-      setWarnings(['第1行: 供应商未识别', '第2行: 供应商未识别']);
+      message.error(err.response?.data?.error || err.message || 'OCR识别失败，请重试');
+      // Demo data (for reference only):
+      // setRawText('品名 | 数量 | 单位 | 单价 | 金额\n土豆 | 50 | 斤 | 2.5 | 125\n五花肉 | 30 | 斤 | 16 | 480');
+      // setItems([
+      //   { productName: '土豆', supplierName: '', quantity: 50, unit: '斤', unitPrice: 2.5, totalAmount: 125 },
+      //   { productName: '五花肉', supplierName: '', quantity: 30, unit: '斤', unitPrice: 16, totalAmount: 480 },
+      // ]);
+      // setWarnings(['第1行: 供应商未识别', '第2行: 供应商未识别']);
     } finally {
       setProcessing(false);
     }

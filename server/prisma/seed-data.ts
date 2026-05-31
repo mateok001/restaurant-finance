@@ -91,9 +91,9 @@ async function main() {
     const numPurchases = rand(1, 3);
     for (let i = 0; i < numPurchases; i++) {
       const product = randomPick(products);
-      const supplier = suppliers.find(s => s.id === product.supplierId) || randomPick(suppliers);
+      const supplier = randomPick(suppliers);
       const quantity = randFloat(5, 50);
-      const unitPrice = randFloat(2, (product.defaultPrice || 30) * 1.2);
+      const unitPrice = randFloat(2, 30 * 1.2);
       const totalAmount = parseFloat((quantity * unitPrice).toFixed(2));
 
       // Add some time-of-day variation to purchaseDate

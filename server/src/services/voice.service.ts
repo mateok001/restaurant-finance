@@ -2,6 +2,19 @@ import { config } from '../config';
 import * as llmService from './llm.service';
 import * as purchaseService from './purchase.service';
 
+function detectAudioMimeType(buffer: Buffer): string {
+  // WAV: "RIFF" header at offset 0
+  if (buffer.length >= 4 && buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) {
+    return 'audio/wav';
+  }
+  // WebM: 0x1A 0x45 0xDF 0xA3 at offset 0
+  if (buffer.length >= 4 && buffer[0] === 0x1A && buffer[1] === 0x45 && buffer[2] === 0xDF && buffer[3] === 0xA3) {
+    return 'audio/webm';
+  }
+  // Default to WAV for FunASR compatibility
+  return 'audio/wav';
+}
+
 interface VoiceProcessResult {
   rawText: string;
   parsedItems: Array<{
@@ -23,8 +36,11 @@ export async function processVoiceInput(
   let rawText: string;
   try {
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: 'audio/wav' });
-    formData.append('audio', blob, 'recording.wav');
+    // 根据文件头魔数推断真实音频类型
+    const detectedType = detectAudioMimeType(audioBuffer);
+    const blob = new Blob([audioBuffer], { type: detectedType });
+    const ext = detectedType.includes('webm') ? 'webm' : 'wav';
+    formData.append('audio', blob, `recording.${ext}`);
 
     const asrResponse = await fetch(`${config.ai.funasrUrl}/api/v1/recognize`, {
       method: 'POST',

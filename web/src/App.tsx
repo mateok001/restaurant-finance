@@ -20,7 +20,9 @@ import OcrInputPage from './pages/OcrInput';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('accessToken');
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token || typeof token !== 'string' || token.trim() === '') {
+    return <Navigate to="/login" replace />;
+  }
   return <>{children}</>;
 }
 
@@ -51,6 +53,7 @@ export default function App() {
                 <Route path="/reports/supplier" element={<SupplierPaymentReportPage />} />
                 <Route path="/briefing" element={<BriefingPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </MainLayout>
           </PrivateRoute>

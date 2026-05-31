@@ -25,10 +25,13 @@ export default function ProductPurchaseReportPage() {
     if (productName) params.productName = productName;
     api.get('/reports/by-product', { params })
       .then((res) => setData(res.data))
-      .catch(() => {}).finally(() => setLoading(false));
+      .catch((err) => {
+        message.error('加载商品采购报表失败，请稍后重试');
+        console.error('ProductPurchaseReport fetch error:', err);
+      }).finally(() => setLoading(false));
   }, [dateRange, productName]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const totalAmount = data.reduce((s, d) => s + d.totalAmount, 0);
   const totalCount = data.reduce((s, d) => s + d.count, 0);

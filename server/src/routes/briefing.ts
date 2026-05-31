@@ -8,7 +8,7 @@ const router = Router();
 router.use(authenticate);
 
 // GET 简报列表
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 12;

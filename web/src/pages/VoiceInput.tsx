@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, Button, Table, InputNumber, Input, Select, DatePicker, message, Space, Spin, Alert, Tag } from 'antd';
 import { AudioOutlined, AudioMutedOutlined, CheckOutlined, EditOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -12,11 +12,21 @@ export default function VoiceInputPage() {
   const [purchaseDate, setPurchaseDate] = useState<dayjs.Dayjs>(dayjs());
   const [submitted, setSubmitted] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup MediaRecorder and stream on unmount
+      mediaRecorderRef.current?.stop();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -29,6 +39,7 @@ export default function VoiceInputPage() {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
         await processAudio(audioBlob);
         stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       };
 
       mediaRecorder.start();
@@ -57,13 +68,13 @@ export default function VoiceInputPage() {
       setRawText(res.data.rawText);
       setItems(res.data.parsedItems || []);
     } catch (err: any) {
-      // Fallback: simulate for demo when FunASR is not available
-      message.info('语音服务未部署，使用模拟演示模式');
-      setRawText('今天从老王菜铺买了50斤土豆每斤2块5，还买了30斤五花肉16块一斤');
-      setItems([
-        { productName: '土豆', supplierName: '老王菜铺', quantity: 50, unit: '斤', unitPrice: 2.5 },
-        { productName: '五花肉', supplierName: '老王菜铺', quantity: 30, unit: '斤', unitPrice: 16 },
-      ]);
+      message.error(err.response?.data?.error || err.message || '语音识别失败，请重试');
+      // Demo data (for reference only):
+      // setRawText('今天从老王菜铺买了50斤土豆每斤2块5，还买了30斤五花肉16块一斤');
+      // setItems([
+      //   { productName: '土豆', supplierName: '老王菜铺', quantity: 50, unit: '斤', unitPrice: 2.5 },
+      //   { productName: '五花肉', supplierName: '老王菜铺', quantity: 30, unit: '斤', unitPrice: 16 },
+      // ]);
     } finally {
       setProcessing(false);
     }

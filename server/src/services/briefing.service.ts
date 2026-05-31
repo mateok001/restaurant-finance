@@ -34,12 +34,10 @@ export async function generate(
   // 当前周期数据
   const currentSummary = await reportService.getSummary(dateRange, 'day');
 
-  // 计算上一周期（环比）
-  const periodDays = Math.ceil(
-    (dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (24 * 60 * 60 * 1000),
-  );
-  const prevStartDate = new Date(dateRange.startDate.getTime() - periodDays * 24 * 60 * 60 * 1000);
+  // 计算上一周期（环比）— 使用自然前周期而非简单天数相减
+  const periodDurationMs = dateRange.endDate.getTime() - dateRange.startDate.getTime();
   const prevEndDate = new Date(dateRange.startDate.getTime() - 24 * 60 * 60 * 1000);
+  const prevStartDate = new Date(prevEndDate.getTime() - periodDurationMs);
   const prevSummary = await reportService.getSummary(
     { startDate: prevStartDate, endDate: prevEndDate },
     'day',

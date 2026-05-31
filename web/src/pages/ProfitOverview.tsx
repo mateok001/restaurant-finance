@@ -33,10 +33,13 @@ export default function ProfitOverviewPage() {
     ]).then(([p, t]) => {
       setProfit(p.data);
       setTrends(t.data);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((err) => {
+      message.error('加载利润数据失败，请稍后重试');
+      console.error('Profit fetch error:', err);
+    }).finally(() => setLoading(false));
   }, [dateRange]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleExportCSV = (type: string) => {
     const ts = dayjs().format('YYYYMMDD_HHmmss');

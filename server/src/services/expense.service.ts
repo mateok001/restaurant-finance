@@ -50,7 +50,7 @@ export async function create(data: {
   return prisma.expense.create({
     data: {
       ...data,
-      expenseDate: new Date(data.expenseDate),
+      expenseDate: new Date(`${data.expenseDate}T00:00:00+08:00`),
       recordedBy: userId,
     },
   });

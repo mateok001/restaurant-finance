@@ -14,6 +14,11 @@ export const registerSchema = z.object({
   role: z.enum(['admin', 'partner', 'staff']).optional().default('staff'),
 });
 
+export const changePasswordSchema = z.object({
+  oldPassword: z.string().min(1, '请输入原密码'),
+  newPassword: z.string().min(6, '新密码至少6位'),
+});
+
 // ========== 供应商 ==========
 export const supplierSchema = z.object({
   name: z.string().min(1, '供应商名称必填').max(100),
@@ -42,6 +47,17 @@ export const purchaseSchema = z.object({
   memo: z.string().optional().nullable(),
 });
 
+export const purchaseUpdateSchema = z.object({
+  supplierId: z.string().min(1, '供应商必填').optional(),
+  productId: z.string().min(1, '商品必填').optional(),
+  unit: z.string().optional().nullable(),
+  quantity: z.number().positive('数量必须大于0').optional(),
+  unitPrice: z.number().positive('单价必须大于0').optional(),
+  totalAmount: z.number().positive('总金额必须大于0').optional(),
+  purchaseDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效').optional(),
+  memo: z.string().optional().nullable(),
+});
+
 export const purchaseVoiceSchema = z.object({
   audioData: z.string().min(1, '音频数据不能为空'),
 });
@@ -55,6 +71,13 @@ export const expenseSchema = z.object({
   category: z.string().min(1, '支出类别必填').max(50),
   amount: z.number().positive('金额必须大于0'),
   expenseDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
+  description: z.string().optional().nullable(),
+});
+
+export const expenseUpdateSchema = z.object({
+  category: z.string().min(1, '支出类别必填').max(50).optional(),
+  amount: z.number().positive('金额必须大于0').optional(),
+  expenseDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效').optional(),
   description: z.string().optional().nullable(),
 });
 
@@ -86,6 +109,17 @@ export const salaryRecordSchema = z.object({
   memo: z.string().optional().nullable(),
 });
 
+export const salaryUpdateSchema = z.object({
+  bonus: z.number().min(0).optional(),
+  deduction: z.number().min(0).optional(),
+  attendanceStatus: z.object({
+    absentDays: z.number().min(0).default(0),
+    fullAttendanceBonus: z.number().min(0).default(0),
+  }).optional(),
+  actualPayDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效').optional().nullable(),
+  memo: z.string().optional().nullable(),
+});
+
 export const salaryBatchSchema = z.object({
   periodStart: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
   periodEnd: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
@@ -102,6 +136,13 @@ export const dailyRevenueSchema = z.object({
   channelId: z.string().uuid('渠道ID无效'),
   amount: z.number().positive('金额必须大于0'),
   revenueDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
+  memo: z.string().optional().nullable(),
+});
+
+export const dailyRevenueUpdateSchema = z.object({
+  channelId: z.string().uuid('渠道ID无效').optional(),
+  amount: z.number().positive('金额必须大于0').optional(),
+  revenueDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效').optional(),
   memo: z.string().optional().nullable(),
 });
 

@@ -5,7 +5,7 @@ interface DateRange {
   endDate: Date;
 }
 
-export async function getSummary(dateRange: DateRange, groupBy: string) {
+export async function getSummary(dateRange: DateRange, _groupBy?: string) {
   // 收入汇总
   const revenues = await prisma.dailyRevenue.findMany({
     where: {
@@ -206,7 +206,7 @@ export async function getRevenueAnalysis(year: number, granularity: 'day' | 'mon
         revenue,
         lastYearRevenue,
         lastPeriodRevenue: 0,
-        yoyChange: lastYearRevenue > 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
+        yoyChange: lastYearRevenue !== 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
         momChange: null,
       });
     }
@@ -229,8 +229,8 @@ export async function getRevenueAnalysis(year: number, granularity: 'day' | 'mon
         revenue,
         lastYearRevenue,
         lastPeriodRevenue,
-        yoyChange: lastYearRevenue > 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
-        momChange: lastPeriodRevenue > 0 ? round((revenue - lastPeriodRevenue) / lastPeriodRevenue * 100) : null,
+        yoyChange: lastYearRevenue !== 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
+        momChange: lastPeriodRevenue !== 0 ? round((revenue - lastPeriodRevenue) / lastPeriodRevenue * 100) : null,
       });
     }
   } else if (granularity === 'month') {
@@ -250,8 +250,8 @@ export async function getRevenueAnalysis(year: number, granularity: 'day' | 'mon
         revenue,
         lastYearRevenue,
         lastPeriodRevenue,
-        yoyChange: lastYearRevenue > 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
-        momChange: lastPeriodRevenue > 0 ? round((revenue - lastPeriodRevenue) / lastPeriodRevenue * 100) : null,
+        yoyChange: lastYearRevenue !== 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
+        momChange: lastPeriodRevenue !== 0 ? round((revenue - lastPeriodRevenue) / lastPeriodRevenue * 100) : null,
       });
     }
   } else if (granularity === 'day' && month) {
@@ -281,8 +281,8 @@ export async function getRevenueAnalysis(year: number, granularity: 'day' | 'mon
         revenue,
         lastYearRevenue,
         lastPeriodRevenue,
-        yoyChange: lastYearRevenue > 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
-        momChange: lastPeriodRevenue > 0 ? round((revenue - lastPeriodRevenue) / lastPeriodRevenue * 100) : null,
+        yoyChange: lastYearRevenue !== 0 ? round((revenue - lastYearRevenue) / lastYearRevenue * 100) : null,
+        momChange: lastPeriodRevenue !== 0 ? round((revenue - lastPeriodRevenue) / lastPeriodRevenue * 100) : null,
       });
     }
   }

@@ -22,6 +22,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const showFull = req.query.showFull === 'true';
+    if (showFull && req.userRole !== 'admin' && req.userRole !== 'partner') {
+      res.status(403).json({ error: '仅管理员和合伙人可查看完整信息' });
+      return;
+    }
     const employee = await employeeService.getById(req.params.id, showFull);
     res.json(employee);
   } catch (err) { next(err); }

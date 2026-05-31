@@ -17,23 +17,32 @@ export default function ProductsPage() {
   const fetchData = () => {
     setLoading(true);
     api.get('/products', { params: { pageSize: 200 } })
-      .then((r) => setData(r.data)).finally(() => setLoading(false));
+      .then((r) => setData(r.data))
+      .catch((err) => {
+        message.error('加载商品数据失败');
+        console.error('Products fetch error:', err);
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchData(); }, []);
 
   const handleSubmit = async (values: any) => {
-    if (editing) {
-      await api.put(`/products/${editing}`, values);
-      message.success('更新成功');
-    } else {
-      await api.post('/products', values);
-      message.success('添加成功');
+    try {
+      if (editing) {
+        await api.put(`/products/${editing}`, values);
+        message.success('更新成功');
+      } else {
+        await api.post('/products', values);
+        message.success('添加成功');
+      }
+      setModalOpen(false);
+      setEditing(null);
+      form.resetFields();
+      fetchData();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '操作失败');
     }
-    setModalOpen(false);
-    setEditing(null);
-    form.resetFields();
-    fetchData();
   };
 
   const handleEdit = (record: any) => {
@@ -43,9 +52,13 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await api.delete(`/products/${id}`);
-    message.success('已删除');
-    fetchData();
+    try {
+      await api.delete(`/products/${id}`);
+      message.success('已删除');
+      fetchData();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '删除失败');
+    }
   };
 
   const columns = [

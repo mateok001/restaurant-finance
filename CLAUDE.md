@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Layer | Technology |
 |-------|-----------|
 | Backend | Node.js + Express + TypeScript, Prisma ORM |
-| Database | PostgreSQL 16 |
+| Database | SQLite (via Prisma) |
 | Cache | Redis |
 | File storage | MinIO (S3-compatible, local) |
 | Web frontend | React 18 + Vite + Ant Design 5 + ECharts |
@@ -41,7 +41,7 @@ npm run dev                          # start Vite dev server on :3000 (proxies /
 npm run build                        # production build
 
 # === Docker (full stack) ===
-docker compose up -d                 # start PostgreSQL + Redis + MinIO + server + web
+docker compose up -d                 # start MinIO + server + web
 docker compose --profile ai up -d    # also start FunASR + PaddleOCR + Ollama
 docker exec rf-ollama ollama pull qwen2.5:3b  # pull LLM model on first run
 ```

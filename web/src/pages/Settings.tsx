@@ -16,10 +16,17 @@ export default function SettingsPage() {
 
   const fetchUsers = async () => {
     if (!isAdmin) return;
-    const profiles = [];
-    // Users list via admin API — simple approach
-    setUsers([user]);
+    try {
+      const res = await api.get('/auth/users');
+      setUsers(res.data);
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '获取用户列表失败');
+    }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [isAdmin]);
 
   const handleChangePassword = async (values: any) => {
     try {
@@ -40,6 +47,16 @@ export default function SettingsPage() {
       fetchUsers();
     } catch (err: any) {
       message.error(err.response?.data?.error || '创建失败');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await api.delete(`/auth/users/${userId}`);
+      message.success('用户已删除');
+      fetchUsers();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '删除失败');
     }
   };
 
@@ -74,6 +91,12 @@ export default function SettingsPage() {
               { title: '显示名', dataIndex: 'displayName' },
               { title: '角色', dataIndex: 'role', render: (v: string) =>
                 <Tag>{v === 'admin' ? '管理员' : v === 'partner' ? '合伙人' : '员工'}</Tag> },
+              { title: '操作', render: (_: any, record: any) =>
+                record.role !== 'admin' ? (
+                  <Popconfirm title="确定删除此用户？" onConfirm={() => handleDeleteUser(record.id)}>
+                    <Button type="link" danger size="small">删除</Button>
+                  </Popconfirm>
+                ) : null },
             ]} />
 
           <Modal title="添加用户" open={userModalOpen}

@@ -37,7 +37,10 @@ export default function RevenuePage() {
     ...Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}日`, value: i + 1 })),
   ];
 
-  const fetchChannels = () => api.get('/revenue-channels').then((r) => setChannels(r.data));
+  const fetchChannels = () => api.get('/revenue-channels').then((r) => setChannels(r.data)).catch((err) => {
+    message.error('加载收入渠道失败');
+    console.error('Fetch channels error:', err);
+  });
   const fetchRevenues = useCallback(() => {
     setLoading(true);
     const params: any = { pageSize: 200 };
@@ -63,7 +66,12 @@ export default function RevenuePage() {
     }
 
     api.get('/daily-revenue', { params })
-      .then((r) => setRevenues(r.data)).finally(() => setLoading(false));
+      .then((r) => setRevenues(r.data))
+      .catch((err) => {
+        message.error('加载收入记录失败');
+        console.error('Fetch revenues error:', err);
+      })
+      .finally(() => setLoading(false));
   }, [filterYear, filterMonth, filterDay]);
 
   useEffect(() => { fetchChannels(); fetchRevenues(); }, [fetchRevenues]);
@@ -106,9 +114,13 @@ export default function RevenuePage() {
   };
 
   const handleDeleteRevenue = async (id: string) => {
-    await api.delete(`/daily-revenue/${id}`);
-    message.success('已删除');
-    fetchRevenues();
+    try {
+      await api.delete(`/daily-revenue/${id}`);
+      message.success('已删除');
+      fetchRevenues();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '删除失败');
+    }
   };
 
   const handleDeleteChannel = async (id: string) => {

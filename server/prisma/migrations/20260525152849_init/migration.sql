@@ -38,12 +38,8 @@ CREATE TABLE "products" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "category" TEXT NOT NULL DEFAULT 'ingredients',
-    "unit" TEXT NOT NULL DEFAULT '斤',
-    "default_price" REAL,
-    "supplier_id" TEXT,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" DATETIME NOT NULL,
-    CONSTRAINT "products_supplier_id_fkey" FOREIGN KEY ("supplier_id") REFERENCES "suppliers" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "updated_at" DATETIME NOT NULL
 );
 
 -- CreateTable
@@ -51,6 +47,7 @@ CREATE TABLE "purchases" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "supplier_id" TEXT NOT NULL,
     "product_id" TEXT NOT NULL,
+    "unit" TEXT,
     "quantity" REAL NOT NULL DEFAULT 0,
     "unit_price" REAL NOT NULL DEFAULT 0,
     "total_amount" REAL NOT NULL DEFAULT 0,
@@ -113,7 +110,7 @@ CREATE TABLE "salary_records" (
     "attendance_status" TEXT NOT NULL DEFAULT '{}',
     "gross_salary" REAL NOT NULL DEFAULT 0,
     "net_salary" REAL NOT NULL DEFAULT 0,
-    "scheduled_pay_date" DATETIME NOT NULL,
+    "hire_date" DATETIME NOT NULL,
     "actual_pay_date" DATETIME,
     "pay_status" TEXT NOT NULL DEFAULT 'pending',
     "recorded_by" TEXT NOT NULL,
@@ -165,3 +162,63 @@ CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "expenses_salary_record_id_key" ON "expenses"("salary_record_id");
+
+-- CreateIndex
+CREATE INDEX "sessions_refresh_token_idx" ON "sessions"("refresh_token");
+
+-- CreateIndex
+CREATE INDEX "sessions_user_id_idx" ON "sessions"("user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "suppliers_name_key" ON "suppliers"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "products_name_key" ON "products"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "revenue_channels_name_key" ON "revenue_channels"("name");
+
+-- CreateIndex
+CREATE INDEX "purchases_supplier_id_idx" ON "purchases"("supplier_id");
+
+-- CreateIndex
+CREATE INDEX "purchases_product_id_idx" ON "purchases"("product_id");
+
+-- CreateIndex
+CREATE INDEX "purchases_purchase_date_idx" ON "purchases"("purchase_date");
+
+-- CreateIndex
+CREATE INDEX "purchases_recorded_by_idx" ON "purchases"("recorded_by");
+
+-- CreateIndex
+CREATE INDEX "expenses_category_idx" ON "expenses"("category");
+
+-- CreateIndex
+CREATE INDEX "expenses_expense_date_idx" ON "expenses"("expense_date");
+
+-- CreateIndex
+CREATE INDEX "expenses_recorded_by_idx" ON "expenses"("recorded_by");
+
+-- CreateIndex
+CREATE INDEX "salary_records_employee_id_idx" ON "salary_records"("employee_id");
+
+-- CreateIndex
+CREATE INDEX "salary_records_period_start_idx" ON "salary_records"("period_start");
+
+-- CreateIndex
+CREATE INDEX "salary_records_pay_status_idx" ON "salary_records"("pay_status");
+
+-- CreateIndex
+CREATE INDEX "salary_records_recorded_by_idx" ON "salary_records"("recorded_by");
+
+-- CreateIndex
+CREATE INDEX "daily_revenues_channel_id_idx" ON "daily_revenues"("channel_id");
+
+-- CreateIndex
+CREATE INDEX "daily_revenues_revenue_date_idx" ON "daily_revenues"("revenue_date");
+
+-- CreateIndex
+CREATE INDEX "daily_revenues_recorded_by_idx" ON "daily_revenues"("recorded_by");
+
+-- CreateIndex
+CREATE INDEX "employees_id_card_number_idx" ON "employees"("id_card_number");

@@ -40,7 +40,7 @@ export function errorHandler(
       return;
     }
     if (code === 'P2003') {
-      res.status(400).json({ error: '关联数据不存在，请检查关联记录是否有效', field: meta?.field_name });
+      res.status(400).json({ error: '关联数据不存在，请检查关联记录是否有效' });
       return;
     }
     if (code === 'P2025') {

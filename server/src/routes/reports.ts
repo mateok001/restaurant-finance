@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireAdminOrPartner } from '../middleware/auth';
 import * as reportService from '../services/report.service';
 
 const router = Router();
 router.use(authenticate);
+router.use(requireAdminOrPartner);
 
 function getDateRange(req: Request): { startDate: Date; endDate: Date } {
   const now = new Date();

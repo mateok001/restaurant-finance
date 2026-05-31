@@ -21,7 +21,12 @@ export default function BriefingPage() {
   const fetchData = () => {
     setLoading(true);
     api.get('/briefing', { params: { pageSize: 50 } })
-      .then((r) => setData(r.data)).finally(() => setLoading(false));
+      .then((r) => setData(r.data))
+      .catch((err) => {
+        message.error('加载简报数据失败');
+        console.error('Briefing fetch error:', err);
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchData(); }, []);

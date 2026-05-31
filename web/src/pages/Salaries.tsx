@@ -145,9 +145,13 @@ export default function SalariesPage() {
   };
 
   const handleMarkPaid = async (id: string) => {
-    await api.patch(`/salaries/${id}/pay`);
-    message.success('已标记发放');
-    fetchData();
+    try {
+      await api.patch(`/salaries/${id}/pay`);
+      message.success('已标记发放');
+      fetchData();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '标记发放失败');
+    }
   };
 
   const handleUnmarkPaid = async (id: string) => {

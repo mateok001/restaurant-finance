@@ -1,6 +1,24 @@
 import { config } from '../config';
 import * as llmService from './llm.service';
 
+function detectImageMimeType(buffer: Buffer): string {
+  // JPEG: 0xFF 0xD8 0xFF at offset 0
+  if (buffer.length >= 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return 'image/jpeg';
+  }
+  // PNG: 0x89 0x50 0x4E 0x47 at offset 0
+  if (buffer.length >= 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+    return 'image/png';
+  }
+  // WebP: "RIFF" at offset 0 and "WEBP" at offset 8
+  if (buffer.length >= 12 && buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46
+      && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+    return 'image/webp';
+  }
+  // Default to JPEG for PaddleOCR compatibility
+  return 'image/jpeg';
+}
+
 interface OcrProcessResult {
   rawText: string;
   parsedItems: Array<{
@@ -26,8 +44,11 @@ export async function processOcrInput(
 
   try {
     const formData = new FormData();
-    const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
-    formData.append('image', blob, 'receipt.jpg');
+    // 根据文件头魔数推断真实 MIME 类型
+    const detectedType = detectImageMimeType(imageBuffer);
+    const blob = new Blob([imageBuffer], { type: detectedType });
+    const ext = detectedType.split('/')[1] || 'jpg';
+    formData.append('image', blob, `receipt.${ext}`);
 
     const ocrResponse = await fetch(`${config.ai.paddleocrUrl}/api/v1/ocr`, {
       method: 'POST',

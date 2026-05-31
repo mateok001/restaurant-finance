@@ -28,5 +28,8 @@ server/screenshots/
 # Docker
 docker-data/
 
+# Claude Code
+.claude/
+
 # Build artifacts
 *.tsbuildinfo

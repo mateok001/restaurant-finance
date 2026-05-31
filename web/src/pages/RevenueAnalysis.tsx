@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Select, Spin, Card, Row, Col, Statistic, Space, Empty } from 'antd';
+import { Select, Spin, Card, Row, Col, Statistic, Space, Empty, message } from 'antd';
 import { BarChartOutlined, RiseOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import dayjs from 'dayjs';
@@ -21,6 +21,10 @@ export default function RevenueAnalysisPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Escape HTML to prevent XSS in ECharts tooltip formatters
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
   const yearOptions: { label: string; value: number }[] = [];
   for (let y = now.year() - 5; y <= now.year(); y++) {
     yearOptions.push({ label: `${y}年`, value: y });
@@ -37,6 +41,10 @@ export default function RevenueAnalysisPage() {
     if (granularity === 'day') params.month = month;
     api.get('/reports/revenue-analysis', { params })
       .then((r) => setData(r.data.data || []))
+      .catch((err) => {
+        message.error('加载营业额分析数据失败，请稍后重试');
+        console.error('RevenueAnalysis fetch error:', err);
+      })
       .finally(() => setLoading(false));
   }, [year, granularity, month]);
 
@@ -51,9 +59,10 @@ export default function RevenueAnalysisPage() {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
+        if (!params || params.length === 0) return '';
         const cur = params.find((p: any) => p.seriesName === '本年');
         const ly = params.find((p: any) => p.seriesName === '去年');
-        let html = `<b>${params[0].axisValue}</b><br/>`;
+        let html = `<b>${escapeHtml(String(params[0].axisValue))}</b><br/>`;
         if (cur) html += `${cur.marker} 本年: ¥${cur.value.toLocaleString()}<br/>`;
         if (ly) html += `${ly.marker} 去年: ¥${ly.value.toLocaleString()}<br/>`;
         if (cur && ly && ly.value > 0) {
@@ -97,10 +106,11 @@ export default function RevenueAnalysisPage() {
     tooltip: {
       trigger: 'axis',
       formatter: (params: any) => {
-        let html = `<b>${params[0].axisValue}</b><br/>`;
+        if (!params || params.length === 0) return '';
+        let html = `<b>${escapeHtml(String(params[0].axisValue))}</b><br/>`;
         params.forEach((p: any) => {
           const v = p.value;
-          html += `${p.marker} ${p.seriesName}: ${v != null ? (v > 0 ? '+' : '') + v.toFixed(1) + '%' : '-'}<br/>`;
+          html += `${p.marker} ${escapeHtml(String(p.seriesName))}: ${v != null ? (v > 0 ? '+' : '') + v.toFixed(1) + '%' : '-'}<br/>`;
         });
         return html;
       },

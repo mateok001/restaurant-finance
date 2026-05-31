@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { loginSchema, registerSchema } from '../types/schemas';
+import { loginSchema, registerSchema, changePasswordSchema } from '../types/schemas';
 import * as authService from '../services/auth.service';
 import { Role } from '../types/enums';
 
@@ -81,11 +81,42 @@ router.get('/profile', authenticate, async (req: Request, res: Response, next: N
 router.put(
   '/password',
   authenticate,
+  validate(changePasswordSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { oldPassword, newPassword } = req.body;
       await authService.changePassword(req.userId!, oldPassword, newPassword);
       res.json({ message: '密码修改成功，请重新登录' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /api/v1/auth/users (admin only)
+router.get(
+  '/users',
+  authenticate,
+  requireRole('admin'),
+  async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const users = await authService.listUsers();
+      res.json(users);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// DELETE /api/v1/auth/users/:id (admin only)
+router.delete(
+  '/users/:id',
+  authenticate,
+  requireRole('admin'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.deleteUser(req.params.id);
+      res.json({ message: '用户已删除' });
     } catch (err) {
       next(err);
     }

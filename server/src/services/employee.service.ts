@@ -80,7 +80,8 @@ export async function toggleStatus(id: string) {
   if (!employee) throw new AppError(404, '员工不存在');
 
   const isActive = !employee.isActive;
-  const leaveDate = isActive ? null : new Date();
+  const now = new Date();
+  const leaveDate = isActive ? null : new Date(now.getTime() + 8 * 60 * 60 * 1000);
 
   return prisma.employee.update({
     where: { id },

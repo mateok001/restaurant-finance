@@ -18,7 +18,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 
   const token = authHeader.slice(7);
   try {
-    const payload = jwt.verify(token, config.jwt.accessSecret) as JwtPayload;
+    const payload = jwt.verify(token, config.jwt.accessSecret, { algorithms: ['HS256'] }) as JwtPayload;
     req.userId = payload.userId;
     req.userRole = payload.role;
     req.userDisplayName = payload.displayName;

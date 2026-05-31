@@ -14,6 +14,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function clearAuthTokens() {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+}
+
 // 响应拦截器：token 过期自动刷新
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: Function; reject: Function }> = [];
@@ -46,7 +51,7 @@ api.interceptors.response.use(
 
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {
-        localStorage.clear();
+        clearAuthTokens();
         window.location.href = '/login';
         return Promise.reject(error);
       }
@@ -54,6 +59,9 @@ api.interceptors.response.use(
       try {
         const response = await axios.post('/api/v1/auth/refresh', { refreshToken });
         const { accessToken, refreshToken: newRefreshToken } = response.data;
+        if (!accessToken || !newRefreshToken) {
+          throw new Error('刷新令牌响应格式无效');
+        }
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', newRefreshToken);
         processQueue(null, accessToken);
@@ -61,7 +69,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.clear();
+        clearAuthTokens();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

@@ -25,10 +25,13 @@ export default function SupplierPaymentReportPage() {
     if (supplierName) params.supplierName = supplierName;
     api.get('/reports/by-supplier', { params })
       .then((res) => setData(res.data))
-      .catch(() => {}).finally(() => setLoading(false));
+      .catch((err) => {
+        message.error('加载供应商货款报表失败，请稍后重试');
+        console.error('SupplierPaymentReport fetch error:', err);
+      }).finally(() => setLoading(false));
   }, [dateRange, supplierName]);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const totalAmount = data.reduce((s, d) => s + d.totalAmount, 0);
   const totalCount = data.reduce((s, d) => s + d.count, 0);

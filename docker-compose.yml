@@ -1,28 +1,6 @@
 version: "3.8"
 
 services:
-  # PostgreSQL 数据库
-  postgres:
-    image: postgres:16-alpine
-    container_name: rf-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: restaurant_finance
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  # Redis 缓存
-  redis:
-    image: redis:7-alpine
-    container_name: rf-redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-
   # MinIO 文件存储
   minio:
     image: minio/minio:latest
@@ -81,8 +59,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/restaurant_finance?schema=public
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: file:./data/restaurant_finance.db
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_ACCESS_KEY: minioadmin
@@ -93,9 +70,9 @@ services:
       OLLAMA_SERVICE_URL: http://ollama:11434
       JWT_ACCESS_SECRET: change-this-to-a-random-secret
       JWT_REFRESH_SECRET: change-this-to-another-random-secret
+    volumes:
+      - sqlite_data:/app/data
     depends_on:
-      - postgres
-      - redis
       - minio
     restart: unless-stopped
 
@@ -112,6 +89,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
   minio_data:
   ollama_data:
+  sqlite_data:
