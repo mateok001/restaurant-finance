@@ -1,14 +1,14 @@
 version: "3.8"
 
 services:
-  # MinIO 文件存储
+  # ---- MinIO 文件存储 ----
   minio:
     image: minio/minio:latest
     container_name: rf-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -16,7 +16,54 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
-  # FunASR 语音识别 (可选：如不使用语音功能可注释)
+  # ---- 后端 API 服务 ----
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: rf-server
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: file:./data/restaurant_finance.db
+      PORT: "8080"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-2h}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-30d}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-restaurant-finance}
+      MINIO_USE_SSL: "false"
+      FUNASR_SERVICE_URL: http://funasr:10095
+      PADDLEOCR_SERVICE_URL: http://paddleocr:8868
+      OLLAMA_SERVICE_URL: http://ollama:11434
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+      REDIS_URL: ${REDIS_URL:-}
+    volumes:
+      - sqlite_data:/app/data
+    depends_on:
+      - minio
+    restart: unless-stopped
+
+  # ---- Web 前端（Nginx + React） ----
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: rf-web
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  # ---- 以下 AI 服务按需启动：docker compose --profile ai up -d ----
+
+  # FunASR 语音识别
   funasr:
     image: registry.cn-hangzhou.aliyuncs.com/funasr_repo/funasr:funasr-runtime-sdk-online-cpu-0.1.10
     container_name: rf-funasr
@@ -28,7 +75,7 @@ services:
     profiles:
       - ai
 
-  # PaddleOCR (可选)
+  # PaddleOCR
   paddleocr:
     image: paddlepaddle/paddleocr:latest
     container_name: rf-paddleocr
@@ -38,7 +85,7 @@ services:
     profiles:
       - ai
 
-  # Ollama + Qwen (可选)
+  # Ollama + Qwen
   ollama:
     image: ollama/ollama:latest
     container_name: rf-ollama
@@ -49,44 +96,6 @@ services:
     restart: unless-stopped
     profiles:
       - ai
-
-  # 后端 API 服务
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: rf-server
-    ports:
-      - "8080:8080"
-    environment:
-      DATABASE_URL: file:./data/restaurant_finance.db
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: 9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: restaurant-finance
-      FUNASR_SERVICE_URL: http://funasr:10095
-      PADDLEOCR_SERVICE_URL: http://paddleocr:8868
-      OLLAMA_SERVICE_URL: http://ollama:11434
-      JWT_ACCESS_SECRET: change-this-to-a-random-secret
-      JWT_REFRESH_SECRET: change-this-to-another-random-secret
-    volumes:
-      - sqlite_data:/app/data
-    depends_on:
-      - minio
-    restart: unless-stopped
-
-  # Web 前端
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    container_name: rf-web
-    ports:
-      - "3000:80"
-    depends_on:
-      - server
-    restart: unless-stopped
 
 volumes:
   minio_data:
