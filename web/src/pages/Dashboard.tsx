@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Spin, Button, Space, Table, Tag, message } from 'antd';
 import {
   DollarOutlined, ShoppingOutlined, RiseOutlined,
-  AudioOutlined, CameraOutlined, EditOutlined,
+  EditOutlined,
   ArrowUpOutlined, ArrowDownOutlined, WalletOutlined,
   PayCircleOutlined,
 } from '@ant-design/icons';
@@ -160,25 +160,18 @@ export default function DashboardPage() {
 
       <h3 style={{ marginBottom: 12, fontSize: 16, fontWeight: 600 }}>快捷录入</h3>
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={8}>
+        <Col xs={24} sm={12}>
           <Card hoverable onClick={() => navigate('/expenses')} style={{ textAlign: 'center', borderRadius: 8 }}>
             <EditOutlined style={{ fontSize: 36, color: '#D4A574', marginBottom: 12 }} />
             <div style={{ fontWeight: 600, fontSize: 15 }}>手动记账</div>
             <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>录入采购与支出明细</div>
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card hoverable onClick={() => navigate('/expenses/voice')} style={{ textAlign: 'center', borderRadius: 8 }}>
-            <AudioOutlined style={{ fontSize: 36, color: '#52c41a', marginBottom: 12 }} />
-            <div style={{ fontWeight: 600, fontSize: 15 }}>语音记账</div>
-            <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>说出记账内容自动识别</div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card hoverable onClick={() => navigate('/expenses/ocr')} style={{ textAlign: 'center', borderRadius: 8 }}>
-            <CameraOutlined style={{ fontSize: 36, color: '#1677ff', marginBottom: 12 }} />
-            <div style={{ fontWeight: 600, fontSize: 15 }}>拍照记账</div>
-            <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>拍摄票据自动识别录入</div>
+        <Col xs={24} sm={12}>
+          <Card hoverable onClick={() => navigate('/revenue')} style={{ textAlign: 'center', borderRadius: 8 }}>
+            <DollarOutlined style={{ fontSize: 36, color: '#52c41a', marginBottom: 12 }} />
+            <div style={{ fontWeight: 600, fontSize: 15 }}>记录收入</div>
+            <div style={{ color: '#999', fontSize: 12, marginTop: 4 }}>记录每日营业收入</div>
           </Card>
         </Col>
       </Row>

@@ -40,8 +40,6 @@ const menuItems: MenuProps['items'] = [
     children: [
       { key: '/purchases', label: '采购管理' },
       { key: '/expenses', label: '费用支出' },
-      { key: '/expenses/voice', label: '语音记账' },
-      { key: '/expenses/ocr', label: '拍照记账' },
     ],
   },
   { key: '/suppliers', icon: <ShopOutlined />, label: '供应商管理' },

@@ -44,6 +44,38 @@
 
 - 身份证号、银行卡号改为**非必填**
 
+### 1.7 移除语音记账 & 拍照记账模块（2026-06-04）
+
+用户决定暂时不需要语音记账和拍照记账功能，已从全栈移除：
+
+| 删除的文件 | 说明 |
+|------|------|
+| `server/src/services/voice.service.ts` | 语音识别服务（FunASR） |
+| `server/src/services/ocr.service.ts` | OCR 识别服务（PaddleOCR） |
+| `web/src/pages/VoiceInput.tsx` | 语音记账页面 |
+| `web/src/pages/OcrInput.tsx` | 拍照记账页面 |
+
+| 修改的文件 | 说明 |
+|------|------|
+| `server/src/routes/purchases.ts` | 移除 `/voice`、`/ocr`、`/confirm-parsed` 路由及相关 Multer 配置 |
+| `server/src/services/purchase.service.ts` | 移除 `createFromVoice`、`createFromOcr`，`inputMethod` 固定为 `manual` |
+| `server/src/types/schemas.ts` | 移除 `purchaseVoiceSchema`、`purchaseOcrSchema` |
+| `server/src/types/enums.ts` | `InputMethod` 移除 `voice`、`ocr` |
+| `server/src/services/file.service.ts` | 移除音频 MIME 类型映射 |
+| `server/src/config/index.ts` | 移除 `funasrUrl`、`paddleocrUrl` |
+| `web/src/App.tsx` | 移除 Voice/Ocr 页面导入和路由 |
+| `web/src/layouts/MainLayout.tsx` | 移除"语音记账""拍照记账"菜单项 |
+| `web/src/pages/Dashboard.tsx` | 语音/拍照快捷入口替换为"记录收入" |
+| `web/src/pages/PurchaseManagement.tsx` | 录入方式映射简化为仅"手动" |
+| `docker-compose.yml` | 移除 FunASR/PaddleOCR 服务定义及环境变量 |
+| `.env.example` | 移除 `FUNASR_SERVICE_URL`、`PADDLEOCR_SERVICE_URL` |
+| `server/prisma/seed-data.ts` | `inputMethod` 固定为 `manual` |
+
+### 1.8 工资支出日期修复（2026-06-04）
+
+- `markAsPaid` 创建关联 Expense 时，`expenseDate` 从 `new Date()` 改为使用 `record.actualPayDate`
+- 修复了 15 条历史数据：工资实发日期在5月但支出记录误显示在6月的问题
+
 ---
 
 ## 二、尚未完成的事项
@@ -54,8 +86,7 @@
 
 **需要做**：
 - 用 Taro CLI 初始化项目（`taro init miniapp`），选 React + TypeScript 模板
-- 实现以下页面：仪表盘、语音记账（`wx.startRecord` / `RecorderManager`）、拍照记账（`wx.chooseImage` → OCR）、收入/支出快速录入、报表简化版
-- 小程序端录音格式需确认与 FunASR 兼容（建议 PCM/WAV，16kHz 采样率）
+- 实现以下页面：仪表盘、收入/支出快速录入、报表简化版
 - 小程序 Storage 替代 localStorage 存储 token
 - 微信小程序审核需注意：属于"工具-记账"类目，不涉及 UGC 社交，审核风险较低
 
@@ -94,7 +125,7 @@ CMD ["node", "dist/index.js"]
 1. `salary.service.ts` — 工资计算公式（基本工资 + 全勤奖 + 奖金 - 扣款）
 2. `report.service.ts` — 毛利/净利润计算、趋势聚合
 3. `auth.service.ts` — token 刷新和轮转防重放
-4. `purchase.service.ts` — 语音/OCR 确认提交流程
+4. `purchase.service.ts` — 采购创建/编辑/删除流程
 
 ### 2.4 定时自动生成简报
 
@@ -110,7 +141,6 @@ CMD ["node", "dist/index.js"]
 
 `config/` 中定义了 Redis 连接配置，Docker Compose 也启动了 Redis，但代码中没有实际使用。可以用于：
 - 报表数据缓存（同一查询 5 分钟内走缓存）
-- 语音/OCR 任务状态追踪
 - 登录失败次数限制（替代内存 rate-limit）
 
 ### 2.6 简报 HTML 模板的数据注入问题
@@ -172,8 +202,6 @@ CMD ["node", "dist/index.js"]
 
 ### 3.6 AI 优化
 
-- 对 FunASR 进行餐饮领域微调（常见食材名称、计量单位）
-- PaddleOCR 自定义模板训练（针对常用进货单格式）
 - Qwen 的 prompt 优化：加入已有供应商/商品列表作为上下文，提高匹配准确率
 
 ### 3.7 数据可视化增强
@@ -189,7 +217,7 @@ CMD ["node", "dist/index.js"]
 | 优先级 | 事项 | 理由 |
 |--------|------|------|
 | P0 | Dockerfile | 否则 docker-compose 无法使用 |
-| P1 | 微信小程序 | 用户明确需要，且手机拍照/语音场景依赖小程序 |
+| P1 | 微信小程序 | 用户明确需要，便于移动端快速录入 |
 | P1 | 测试（核心模块） | 财务软件数据准确性至关重要 |
 | P1 | 简报自动定时生成 | 需求明确，手动触发不够用 |
 | P2 | Redis 实际使用 | 性能优化，现阶段数据量小不太需要 |

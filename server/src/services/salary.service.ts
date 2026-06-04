@@ -241,7 +241,7 @@ export async function markAsPaid(id: string) {
       data: {
         category: 'salary',
         amount: record.netSalary,
-        expenseDate: new Date(),
+        expenseDate: record.actualPayDate || new Date(),
         recordedBy: record.recordedBy,
         description: `${employee?.name || '员工'} ${record.periodStart.toISOString().slice(0, 10)}~${record.periodEnd.toISOString().slice(0, 10)} 工资`,
         salaryRecordId: id,

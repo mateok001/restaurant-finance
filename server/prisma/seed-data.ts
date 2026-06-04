@@ -109,7 +109,7 @@ async function main() {
           totalAmount,
           purchaseDate: purchaseDateTime,
           recordedBy: admin.id,
-          inputMethod: randomPick(['manual', 'manual', 'manual', 'voice', 'ocr']),
+          inputMethod: 'manual',
           memo: Math.random() > 0.7 ? '早市采购' : null,
         },
       });

@@ -81,15 +81,8 @@ export default function PurchaseManagementPage() {
       const data = { ...values };
       if (data.purchaseDate) data.purchaseDate = data.purchaseDate.format('YYYY-MM-DD');
 
-      const qty = Number(data.quantity);
-      const up = Number(data.unitPrice);
-      const ta = Number(data.totalAmount);
-      if (!data.totalAmount && qty && up) {
-        data.totalAmount = qty * up;
-      } else if (!data.unitPrice && qty && ta) {
-        data.unitPrice = ta / qty;
-      } else if (!data.totalAmount || !data.unitPrice) {
-        message.error('请填写单价或总价');
+      if (!data.totalAmount || Number(data.totalAmount) <= 0) {
+        message.error('请输入总价');
         return;
       }
 
@@ -165,7 +158,7 @@ export default function PurchaseManagementPage() {
     { title: '金额', dataIndex: 'totalAmount', render: (v: number) => `¥${Number(v).toLocaleString()}`, width: 120 },
     {
       title: '方式', dataIndex: 'inputMethod', width: 70,
-      render: (v: string) => ({ manual: '手动', voice: '语音', ocr: '拍照' } as any)[v] || v,
+      render: (v: string) => ({ manual: '手动' } as any)[v] || v,
     },
     {
       title: '发票', dataIndex: 'invoiceFileUrl', width: 70,
@@ -249,25 +242,23 @@ export default function PurchaseManagementPage() {
           <Form.Item name="unit" label="单位">
             <Select allowClear placeholder="选择单位（可选）" options={unitOptions} />
           </Form.Item>
-          <Form.Item name="quantity" label="数量" rules={[{ required: true, message: '请输入数量' }]}>
+          <Form.Item name="quantity" label="数量（可选）">
             <InputNumber min={0} step={0.1} style={{ width: '100%' }} placeholder="0"
               onChange={(val) => {
                 if (val == null) return;
                 const up = form.getFieldValue('unitPrice');
-                const ta = form.getFieldValue('totalAmount');
                 if (up) form.setFieldsValue({ totalAmount: Number((val * up).toFixed(2)) });
-                else if (ta && val > 0) form.setFieldsValue({ unitPrice: Number((ta / val).toFixed(4)) });
               }} />
           </Form.Item>
-          <Form.Item name="unitPrice" label="单价" rules={[{ required: true, message: '请输入单价或总价' }]}>
+          <Form.Item name="unitPrice" label="单价（可选）">
             <InputNumber min={0} step={0.01} style={{ width: '100%' }} prefix="¥" placeholder="0.00"
               onChange={(val) => {
                 const q = form.getFieldValue('quantity');
                 if (q && val != null) form.setFieldsValue({ totalAmount: Number((q * val).toFixed(2)) });
               }} />
           </Form.Item>
-          <Form.Item name="totalAmount" label="总价">
-            <InputNumber min={0} step={0.01} style={{ width: '100%' }} prefix="¥" placeholder="0.00"
+          <Form.Item name="totalAmount" label="总价" rules={[{ required: true, message: '请输入总价' }]}>
+            <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} prefix="¥" placeholder="0.00"
               onChange={(val) => {
                 const q = form.getFieldValue('quantity');
                 if (q && q > 0 && val != null) form.setFieldsValue({ unitPrice: Number((val / q).toFixed(4)) });

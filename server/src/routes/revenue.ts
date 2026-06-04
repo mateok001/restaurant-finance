@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireAdminOrPartner } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { revenueChannelSchema, dailyRevenueSchema, dailyRevenueUpdateSchema } from '../types/schemas';
+import { revenueChannelSchema, dailyRevenueSchema, dailyRevenueUpdateSchema, dailyRevenueBatchSchema } from '../types/schemas';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
 
@@ -95,6 +95,35 @@ router.post('/daily-revenue', requireAdminOrPartner, validate(dailyRevenueSchema
       },
     });
     res.status(201).json(revenue);
+  } catch (err) { next(err); }
+});
+
+// 批量记录收入：只录入金额大于0的渠道
+router.post('/daily-revenue/batch', requireAdminOrPartner, validate(dailyRevenueBatchSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { revenueDate, items } = req.body;
+    // 过滤掉金额为0或空的项
+    const validItems = items.filter((item: any) => item.amount > 0);
+
+    if (validItems.length === 0) {
+      res.status(400).json({ error: '至少需要一项金额大于0的收入' });
+      return;
+    }
+
+    const date = new Date(revenueDate);
+    const created = await Promise.all(
+      validItems.map((item: any) =>
+        prisma.dailyRevenue.create({
+          data: {
+            channelId: item.channelId,
+            amount: item.amount,
+            revenueDate: date,
+            recordedBy: req.userId!,
+          },
+        })
+      )
+    );
+    res.status(201).json({ count: created.length, items: created });
   } catch (err) { next(err); }
 });
 

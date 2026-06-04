@@ -38,8 +38,6 @@ export async function uploadFile(
     'image/png': 'png',
     'image/webp': 'webp',
     'application/pdf': 'pdf',
-    'audio/wav': 'wav',
-    'audio/webm': 'webm',
   };
   const ext = safeExts[mimeType] || 'bin';
   const objectName = `${uuidv4()}.${ext}`;

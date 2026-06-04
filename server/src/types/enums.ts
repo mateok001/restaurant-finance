@@ -19,8 +19,6 @@ export type ProductCategory = (typeof ProductCategory)[keyof typeof ProductCateg
 
 export const InputMethod = {
   manual: 'manual',
-  voice: 'voice',
-  ocr: 'ocr',
 } as const;
 export type InputMethod = (typeof InputMethod)[keyof typeof InputMethod];
 

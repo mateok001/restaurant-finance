@@ -38,8 +38,6 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-restaurant-finance}
       MINIO_USE_SSL: "false"
-      FUNASR_SERVICE_URL: http://funasr:10095
-      PADDLEOCR_SERVICE_URL: http://paddleocr:8868
       OLLAMA_SERVICE_URL: http://ollama:11434
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
       REDIS_URL: ${REDIS_URL:-}
@@ -62,28 +60,6 @@ services:
     restart: unless-stopped
 
   # ---- 以下 AI 服务按需启动：docker compose --profile ai up -d ----
-
-  # FunASR 语音识别
-  funasr:
-    image: registry.cn-hangzhou.aliyuncs.com/funasr_repo/funasr:funasr-runtime-sdk-online-cpu-0.1.10
-    container_name: rf-funasr
-    ports:
-      - "8100:10095"
-    environment:
-      ASR_MODEL: SenseVoiceSmall
-    restart: unless-stopped
-    profiles:
-      - ai
-
-  # PaddleOCR
-  paddleocr:
-    image: paddlepaddle/paddleocr:latest
-    container_name: rf-paddleocr
-    ports:
-      - "8200:8868"
-    restart: unless-stopped
-    profiles:
-      - ai
 
   # Ollama + Qwen
   ollama:

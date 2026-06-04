@@ -39,11 +39,11 @@ export const purchaseSchema = z.object({
   supplierId: z.string().min(1, '供应商必填'),
   productId: z.string().min(1, '商品必填'),
   unit: z.string().optional().nullable(),
-  quantity: z.number().positive('数量必须大于0'),
-  unitPrice: z.number().positive('单价必须大于0'),
+  quantity: z.number().min(0).optional(),
+  unitPrice: z.number().min(0).optional(),
   totalAmount: z.number().positive('总金额必须大于0'),
   purchaseDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
-  inputMethod: z.enum(['manual', 'voice', 'ocr']).default('manual'),
+  inputMethod: z.enum(['manual']).default('manual'),
   memo: z.string().optional().nullable(),
 });
 
@@ -51,19 +51,11 @@ export const purchaseUpdateSchema = z.object({
   supplierId: z.string().min(1, '供应商必填').optional(),
   productId: z.string().min(1, '商品必填').optional(),
   unit: z.string().optional().nullable(),
-  quantity: z.number().positive('数量必须大于0').optional(),
-  unitPrice: z.number().positive('单价必须大于0').optional(),
+  quantity: z.number().min(0).optional(),
+  unitPrice: z.number().min(0).optional(),
   totalAmount: z.number().positive('总金额必须大于0').optional(),
   purchaseDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效').optional(),
   memo: z.string().optional().nullable(),
-});
-
-export const purchaseVoiceSchema = z.object({
-  audioData: z.string().min(1, '音频数据不能为空'),
-});
-
-export const purchaseOcrSchema = z.object({
-  imageData: z.string().min(1, '图片数据不能为空'),
 });
 
 // ========== 支出记录 ==========
@@ -137,6 +129,14 @@ export const dailyRevenueSchema = z.object({
   amount: z.number().positive('金额必须大于0'),
   revenueDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
   memo: z.string().optional().nullable(),
+});
+
+export const dailyRevenueBatchSchema = z.object({
+  revenueDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
+  items: z.array(z.object({
+    channelId: z.string().uuid('渠道ID无效'),
+    amount: z.number().min(0, '金额不能为负'),
+  })).min(1, '至少需要一项收入数据'),
 });
 
 export const dailyRevenueUpdateSchema = z.object({

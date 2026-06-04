@@ -39,8 +39,6 @@ export const config = {
     useSSL: process.env.MINIO_USE_SSL === 'true',
   },
   ai: {
-    funasrUrl: process.env.FUNASR_SERVICE_URL || 'http://localhost:8100',
-    paddleocrUrl: process.env.PADDLEOCR_SERVICE_URL || 'http://localhost:8200',
     ollamaUrl: process.env.OLLAMA_SERVICE_URL || 'http://localhost:11434',
   },
   puppeteer: {

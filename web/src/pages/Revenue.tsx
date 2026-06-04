@@ -8,11 +8,15 @@ export default function RevenuePage() {
   const [channels, setChannels] = useState<any[]>([]);
   const [revenues, setRevenues] = useState<any>({ items: [], total: 0 });
   const [loading, setLoading] = useState(false);
+  const [pageSize, setPageSize] = useState(30);
   const [revenueModalOpen, setRevenueModalOpen] = useState(false);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [channelModalOpen, setChannelModalOpen] = useState(false);
   const [editingRevenue, setEditingRevenue] = useState<string | null>(null);
   const [editingChannel, setEditingChannel] = useState<string | null>(null);
   const [revenueForm] = Form.useForm();
+  const [batchForm] = Form.useForm();
   const [channelForm] = Form.useForm();
 
   const now = dayjs();
@@ -92,6 +96,40 @@ export default function RevenuePage() {
       fetchRevenues();
     } catch (err: any) {
       message.error(err.response?.data?.error || '操作失败');
+    }
+  };
+
+  const handleBatchSubmit = async (values: any) => {
+    try {
+      setBatchSubmitting(true);
+      const items = channels
+        .filter((c: any) => {
+          const amount = parseFloat(values[`channel_${c.id}`] || '0');
+          return !isNaN(amount) && amount > 0;
+        })
+        .map((c: any) => ({
+          channelId: c.id,
+          amount: parseFloat(parseFloat(values[`channel_${c.id}`]).toFixed(2)),
+        }));
+
+      if (items.length === 0) {
+        message.warning('请至少填写一项金额大于0的收入');
+        return;
+      }
+
+      const payload = {
+        revenueDate: values.revenueDate.format('YYYY-MM-DD'),
+        items,
+      };
+      const r = await api.post('/daily-revenue/batch', payload);
+      message.success(`成功录入 ${r.data.count} 条收入记录`);
+      setBatchModalOpen(false);
+      batchForm.resetFields();
+      fetchRevenues();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '操作失败');
+    } finally {
+      setBatchSubmitting(false);
     }
   };
 
@@ -223,13 +261,20 @@ export default function RevenuePage() {
           <Select value={filterDay} onChange={(v) => setFilterDay(v)} options={dayOptions} style={{ width: 85 }} />
           <Button icon={<SearchOutlined />} onClick={fetchRevenues}>查询</Button>
         </Space>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingRevenue(null); revenueForm.resetFields(); revenueForm.setFieldsValue({ revenueDate: dayjs() }); setRevenueModalOpen(true); }}>
-          记录收入
-        </Button>
+        <Space>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingRevenue(null); revenueForm.resetFields(); revenueForm.setFieldsValue({ revenueDate: dayjs() }); setRevenueModalOpen(true); }}>
+            记录收入
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { batchForm.resetFields(); batchForm.setFieldsValue({ revenueDate: dayjs() }); setBatchModalOpen(true); }}>
+            批量记录收入
+          </Button>
+        </Space>
       </div>
 
       <Table columns={revenueColumns} dataSource={revenues.items} rowKey="id" loading={loading}
-        pagination={{ pageSize: 30, showSizeChanger: true, showTotal: (t: number) => `共 ${t} 条` }} size="small" />
+        pagination={{ pageSize, showSizeChanger: true, pageSizeOptions: ['30', '50', '100'], showTotal: (t: number) => `共 ${t} 条` }}
+        onChange={(pagination) => { if (pagination.pageSize) setPageSize(pagination.pageSize); }}
+        size="small" />
 
       <Modal
         title={(editingRevenue ? '编辑' : '新增') + '收入记录'}
@@ -249,6 +294,27 @@ export default function RevenuePage() {
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="memo" label="备注"><Input.TextArea rows={2} /></Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="批量记录收入"
+        open={batchModalOpen}
+        onCancel={() => { setBatchModalOpen(false); }}
+        onOk={() => batchForm.submit()}
+        confirmLoading={batchSubmitting}
+        destroyOnClose
+        width={480}
+      >
+        <Form form={batchForm} layout="vertical" onFinish={handleBatchSubmit}>
+          <Form.Item name="revenueDate" label="收入日期" rules={[{ required: true, message: '请选择日期' }]}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          {channels.map((c: any) => (
+            <Form.Item key={c.id} name={`channel_${c.id}`} label={`${c.name}（元）`}>
+              <InputNumber min={0} step={0.01} style={{ width: '100%' }} prefix="¥" placeholder="0.00（可不填）" />
+            </Form.Item>
+          ))}
         </Form>
       </Modal>
 

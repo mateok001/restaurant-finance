@@ -15,9 +15,6 @@ import ProductPurchaseReportPage from './pages/ProductPurchaseReport';
 import SupplierPaymentReportPage from './pages/SupplierPaymentReport';
 import BriefingPage from './pages/Briefing';
 import SettingsPage from './pages/Settings';
-import VoiceInputPage from './pages/VoiceInput';
-import OcrInputPage from './pages/OcrInput';
-
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('accessToken');
   if (!token || typeof token !== 'string' || token.trim() === '') {
@@ -41,8 +38,6 @@ export default function App() {
                 <Route path="/revenue/analysis" element={<RevenueAnalysisPage />} />
                 <Route path="/purchases" element={<PurchaseManagementPage />} />
                 <Route path="/expenses" element={<ExpenseManagementPage />} />
-                <Route path="/expenses/voice" element={<VoiceInputPage />} />
-                <Route path="/expenses/ocr" element={<OcrInputPage />} />
                 <Route path="/suppliers" element={<SuppliersPage />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/employees" element={<EmployeesPage />} />

@@ -4,34 +4,12 @@ import { authenticate, requireAdminOrPartner } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { purchaseSchema, purchaseUpdateSchema } from '../types/schemas';
 import * as purchaseService from '../services/purchase.service';
-import * as voiceService from '../services/voice.service';
-import * as ocrService from '../services/ocr.service';
 
 const router = Router();
 router.use(authenticate);
 
 // 文件类型白名单
-const ALLOWED_AUDIO_TYPES = ['audio/wav', 'audio/mpeg', 'audio/webm', 'audio/mp4', 'audio/ogg'];
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_INVOICE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-
-const uploadAudio = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (ALLOWED_AUDIO_TYPES.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('音频格式不支持，仅支持 WAV/MP3/WebM/MP4/OGG'));
-  },
-});
-
-const uploadImage = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('图片格式不支持，仅支持 JPEG/PNG/WebP'));
-  },
-});
 
 const uploadInvoice = multer({
   storage: multer.memoryStorage(),
@@ -50,7 +28,6 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const result = await purchaseService.list(page, pageSize, {
       supplierId: req.query.supplierId as string,
       productId: req.query.productId as string,
-      inputMethod: req.query.inputMethod as any,
       startDate: req.query.startDate as string,
       endDate: req.query.endDate as string,
     });
@@ -71,62 +48,6 @@ router.post('/', requireAdminOrPartner, validate(purchaseSchema), async (req: Re
   try {
     const purchase = await purchaseService.create(req.body, req.userId!);
     res.status(201).json(purchase);
-  } catch (err) { next(err); }
-});
-
-// POST 语音录入采购
-router.post('/voice', requireAdminOrPartner, uploadAudio.single('audio'), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: '请上传音频文件' });
-      return;
-    }
-    const purchaseDate = req.body.purchaseDate || new Date().toISOString().slice(0, 10);
-    const result = await voiceService.processVoiceInput(
-      req.file.buffer,
-      purchaseDate,
-      req.userId!,
-    );
-    res.json(result);
-  } catch (err) { next(err); }
-});
-
-// POST OCR 图片录入采购
-router.post('/ocr', requireAdminOrPartner, uploadImage.single('image'), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: '请上传进货单图片' });
-      return;
-    }
-    const purchaseDate = req.body.purchaseDate || new Date().toISOString().slice(0, 10);
-    const result = await ocrService.processOcrInput(
-      req.file.buffer,
-      purchaseDate,
-      req.userId!,
-    );
-    res.json(result);
-  } catch (err) { next(err); }
-});
-
-// POST 确认并提交语音/OCR解析结果
-router.post('/confirm-parsed', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { items, purchaseDate, rawText, inputMethod } = req.body;
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      res.status(400).json({ error: '采购明细不能为空' });
-      return;
-    }
-
-    let results;
-    if (inputMethod === 'voice') {
-      results = await purchaseService.createFromVoice(items, purchaseDate, rawText, req.userId!);
-    } else if (inputMethod === 'ocr') {
-      results = await purchaseService.createFromOcr(items, purchaseDate, rawText, req.userId!);
-    } else {
-      res.status(400).json({ error: 'inputMethod 必须为 voice 或 ocr' });
-      return;
-    }
-    res.status(201).json(results);
   } catch (err) { next(err); }
 });
 

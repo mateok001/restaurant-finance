@@ -1,7 +1,5 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/errorHandler';
-import { InputMethod } from '../types/enums';
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -38,7 +36,6 @@ export async function list(
   filters?: {
     supplierId?: string;
     productId?: string;
-    inputMethod?: InputMethod;
     startDate?: string;
     endDate?: string;
   },
@@ -46,7 +43,6 @@ export async function list(
   const where: any = {};
   if (filters?.supplierId) where.supplierId = filters.supplierId;
   if (filters?.productId) where.productId = filters.productId;
-  if (filters?.inputMethod) where.inputMethod = filters.inputMethod;
   if (filters?.startDate || filters?.endDate) {
     where.purchaseDate = {};
     if (filters?.startDate) where.purchaseDate.gte = new Date(`${filters.startDate}T00:00:00+08:00`);
@@ -87,11 +83,10 @@ export async function create(data: {
   supplierId: string;
   productId: string;
   unit?: string | null;
-  quantity: number;
-  unitPrice: number;
+  quantity?: number;
+  unitPrice?: number;
   totalAmount: number;
   purchaseDate: string;
-  inputMethod: InputMethod;
   memo?: string | null;
   rawInputText?: string | null;
 }, userId: string) {
@@ -103,12 +98,12 @@ export async function create(data: {
       supplierId,
       productId,
       unit: data.unit || null,
-      quantity: data.quantity,
-      unitPrice: data.unitPrice,
+      quantity: data.quantity ?? 0,
+      unitPrice: data.unitPrice ?? 0,
       totalAmount: data.totalAmount,
       purchaseDate: new Date(data.purchaseDate),
       recordedBy: userId,
-      inputMethod: data.inputMethod,
+      inputMethod: 'manual',
       memo: data.memo || null,
       rawInputText: data.rawInputText || null,
     },
@@ -139,120 +134,6 @@ export async function update(
 export async function remove(id: string) {
   await getById(id);
   return prisma.purchase.delete({ where: { id } });
-}
-
-export async function createFromVoice(
-  items: Array<{
-    productName: string;
-    supplierName?: string;
-    quantity: number;
-    unit: string;
-    unitPrice: number;
-  }>,
-  purchaseDate: string,
-  rawText: string,
-  userId: string,
-) {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const results = [];
-    for (const item of items) {
-      let supplierId: string | null = null;
-      if (item.supplierName) {
-        let supplier = await tx.supplier.findFirst({
-          where: { name: { equals: item.supplierName } },
-        });
-        if (!supplier) {
-          supplier = await tx.supplier.create({ data: { name: item.supplierName } });
-        }
-        supplierId = supplier.id;
-      }
-
-      if (!supplierId) throw new AppError(400, `无法确定供应商: ${item.productName}`);
-
-      let product = await tx.product.findFirst({
-        where: { name: { equals: item.productName } },
-      });
-      if (!product) {
-        product = await tx.product.create({
-          data: { name: item.productName, category: 'ingredients' },
-        });
-      }
-
-      const purchase = await tx.purchase.create({
-        data: {
-          supplierId: supplierId!,
-          productId: product.id,
-          unit: item.unit,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalAmount: Math.round(item.quantity * item.unitPrice * 100) / 100,
-          purchaseDate: new Date(purchaseDate),
-          recordedBy: userId,
-          inputMethod: 'voice',
-          rawInputText: rawText,
-        },
-      });
-      results.push(purchase);
-    }
-    return results;
-  });
-}
-
-export async function createFromOcr(
-  items: Array<{
-    productName: string;
-    supplierName?: string;
-    quantity: number;
-    unit: string;
-    unitPrice: number;
-    totalAmount: number;
-  }>,
-  purchaseDate: string,
-  rawText: string,
-  userId: string,
-) {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const results = [];
-    for (const item of items) {
-      let supplierId: string | null = null;
-      if (item.supplierName) {
-        let supplier = await tx.supplier.findFirst({
-          where: { name: { equals: item.supplierName } },
-        });
-        if (!supplier) {
-          supplier = await tx.supplier.create({ data: { name: item.supplierName } });
-        }
-        supplierId = supplier.id;
-      }
-      if (!supplierId) throw new AppError(400, `无法确定供应商: ${item.productName}`);
-
-      let product = await tx.product.findFirst({
-        where: { name: { equals: item.productName } },
-      });
-      if (!product) {
-        product = await tx.product.create({
-          data: { name: item.productName, category: 'ingredients' },
-        });
-      }
-
-      const purchase = await tx.purchase.create({
-        data: {
-          supplierId: supplierId!,
-          productId: product.id,
-          unit: item.unit,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalAmount: Math.round(item.totalAmount * 100) / 100,
-          purchaseDate: new Date(purchaseDate),
-          recordedBy: userId,
-          inputMethod: 'ocr',
-          rawInputText: rawText,
-        },
-      });
-      results.push(purchase);
-    }
-    return results;
-  });
 }
 
 export async function uploadInvoice(id: string, fileUrl: string) {

@@ -53,6 +53,27 @@
 | B45 | 前端 | LOW | ✅ 已修复 | web/src/App.tsx | 缺少 404 回退路由 |
 | B46 | 前端 | LOW | ✅ 已修复 | web/src/layouts/MainLayout.tsx | 菜单 key 前缀不一致 |
 | B47 | 可靠性 | LOW | ✅ 已修复 | server/src/middleware/errorHandler.ts:43 | Prisma P2003 错误泄露数据库字段名 |
+| B48 | 前端 | HIGH | ✅ 已修复 | web/src/pages/Revenue.tsx:273-275 | 收入页分页器pageSize切换无效 |
+| B49 | 数据 | HIGH | ✅ 已修复 | server/src/services/salary.service.ts:244 | 工资支出expenseDate未使用实发日期 |
+
+---
+
+## 功能新增
+
+### F01 — 批量记录收入功能
+**日期**: 2026-06-04
+**文件**: `server/src/routes/revenue.ts`, `server/src/types/schemas.ts`, `web/src/pages/Revenue.tsx`
+**描述**: 在收入管理页新增"批量记录收入"按钮，打开表单后可选择日期并为每个收入渠道填入金额（非必填），提交时自动过滤金额为0的渠道，仅录入有效数据（0~4条）。
+**后端**: 新增 `POST /api/v1/daily-revenue/batch` 接口，接收 `{ revenueDate, items: [{ channelId, amount }] }`，自动过滤 `amount > 0` 的项批量创建。
+**前端**: 新增 `batchModalOpen`/`batchForm` 状态，Modal 按渠道动态渲染 InputNumber 字段。
+
+### F02 — 移除语音记账 & 拍照记账模块
+**日期**: 2026-06-04
+**描述**: 用户决定暂时不需要语音记账和拍照记账功能，从全栈移除相关模块。
+**删除的文件**: `server/src/services/voice.service.ts`, `server/src/services/ocr.service.ts`, `web/src/pages/VoiceInput.tsx`, `web/src/pages/OcrInput.tsx`
+**后端修改**: 移除 `/voice`、`/ocr`、`/confirm-parsed` 路由；`inputMethod` 枚举简化为仅 `manual`；移除 FunASR/PaddleOCR 配置
+**前端修改**: 移除 Voice/Ocr 页面路由和菜单项；仪表盘快捷入口替换为"记录收入"；`inputMethod` 映射简化为仅"手动"
+**配置修改**: `docker-compose.yml` 移除 FunASR/PaddleOCR 服务；`.env.example` 移除相关环境变量
 
 ---
 
@@ -133,7 +154,15 @@
 **问题**: MinIO 后备凭据 `minioadmin/minioadmin` 为公开默认值
 **修复**: 生产环境未设置时警告并使用随机生成的凭据
 
----
+### B48 — 收入页分页器切换无效 [HIGH]
+**文件**: `web/src/pages/Revenue.tsx`
+**问题**: Table 的 `pagination.pageSize` 硬编码为 30，无 `onChange` 回调，用户选择 50/100 条后表格恢复为 30 条
+**修复**: 添加 `pageSize` 状态 (`useState(30)`)，通过 Table 的 `onChange` 回调联动更新 `pagination.pageSize`
+
+### B49 — 工资支出expenseDate未使用实发日期 [HIGH]
+**文件**: `server/src/services/salary.service.ts:244`
+**问题**: `markAsPaid` 创建关联 Expense 时 `expenseDate` 写死为 `new Date()`，导致实发日期在5月的工资支出记录错误显示在6月
+**修复**: 改为 `record.actualPayDate || new Date()`，同时修复 15 条历史数据
 
 ---
 
@@ -142,11 +171,11 @@
 | 严重度 | 总数 | 已修复 |
 |--------|------|--------|
 | CRITICAL | 6 | 6 |
-| HIGH | 14 | 14 |
+| HIGH | 16 | 16 |
 | MEDIUM | 17 | 17 |
 | LOW | 10 | 10 |
-| **合计** | **47** | **47** |
+| **合计** | **49** | **49** |
 
 > 注：B_skip_1 (工资公式) 和 B_skip_2 (工资列表 PII 脱敏) 经用户确认无需修改，未列入上表。
 
-*最后更新: 2026-05-31*
+*最后更新: 2026-06-04*
