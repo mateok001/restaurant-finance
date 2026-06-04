@@ -1,0 +1,221 @@
+<view class="entry-page">
+  <!-- Tab 切换 -->
+  <view class="tab-bar">
+    <view
+      class="tab-item {{activeTab === 'income' ? 'active' : ''}}"
+      data-tab="income"
+      bindtap="onTabChange"
+    >记收入</view>
+    <view
+      class="tab-item {{activeTab === 'purchase' ? 'active' : ''}}"
+      data-tab="purchase"
+      bindtap="onTabChange"
+    >记采购</view>
+    <view
+      class="tab-item {{activeTab === 'expense' ? 'active' : ''}}"
+      data-tab="expense"
+      bindtap="onTabChange"
+    >记支出</view>
+  </view>
+
+  <!-- ==================== 收入录入 ==================== -->
+  <view class="tab-content" wx:if="{{activeTab === 'income'}}">
+    <view class="card">
+      <view class="form-row">
+        <text class="form-label">日期</text>
+        <picker mode="date" value="{{revenueDate}}" bindchange="onRevenueDateChange">
+          <view class="form-picker">{{revenueDate}}</view>
+        </picker>
+      </view>
+
+      <view class="divider"></view>
+
+      <view class="channel-list">
+        <view
+          class="channel-row"
+          wx:for="{{channels}}"
+          wx:key="id"
+        >
+          <text class="channel-name">{{item.name}}</text>
+          <view class="channel-input-wrap">
+            <text class="channel-currency">¥</text>
+            <input
+              class="channel-input"
+              type="digit"
+              placeholder="0.00"
+              data-channel-id="{{item.id}}"
+              value="{{channelInputs[item.id] || ''}}"
+              bindinput="onChannelAmountInput"
+            />
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{channels.length === 0}}" class="empty-hint">
+        暂无收入渠道，请在 Web 端添加
+      </view>
+    </view>
+
+    <button
+      class="submit-btn"
+      bindtap="onSubmitRevenue"
+      disabled="{{revenueSubmitting}}"
+      loading="{{revenueSubmitting}}"
+    >提交收入记录</button>
+  </view>
+
+  <!-- ==================== 采购录入 ==================== -->
+  <view class="tab-content" wx:if="{{activeTab === 'purchase'}}">
+    <view class="card">
+      <view class="input-group">
+        <text class="input-label">供应商名称</text>
+        <input
+          class="input-field"
+          placeholder="输入或搜索供应商"
+          value="{{purchaseSupplier}}"
+          bindinput="onPurchaseSupplierInput"
+        />
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">商品名称</text>
+        <input
+          class="input-field"
+          placeholder="输入或搜索商品"
+          value="{{purchaseProduct}}"
+          bindinput="onPurchaseProductInput"
+        />
+      </view>
+
+      <view class="form-row-split">
+        <view class="input-group half">
+          <text class="input-label">数量</text>
+          <input
+            class="input-field"
+            type="digit"
+            placeholder="0"
+            value="{{purchaseQuantity}}"
+            bindinput="onPurchaseQuantityInput"
+          />
+        </view>
+        <view class="input-group half">
+          <text class="input-label">单位</text>
+          <picker
+            mode="selector"
+            range="{{units}}"
+            value="{{purchaseUnitIndex}}"
+            bindchange="onPurchaseUnitChange"
+          >
+            <view class="input-field picker-field">{{units[purchaseUnitIndex]}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="form-row-split">
+        <view class="input-group half">
+          <text class="input-label">单价 (¥)</text>
+          <input
+            class="input-field"
+            type="digit"
+            placeholder="0.00"
+            value="{{purchaseUnitPrice}}"
+            bindinput="onPurchaseUnitPriceInput"
+          />
+        </view>
+        <view class="input-group half">
+          <text class="input-label">总价 (¥)</text>
+          <input
+            class="input-field"
+            type="digit"
+            placeholder="0.00"
+            value="{{purchaseTotalAmount}}"
+            bindinput="onPurchaseTotalAmountInput"
+          />
+        </view>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">采购日期</text>
+        <picker mode="date" value="{{purchaseDate}}" bindchange="onPurchaseDateChange">
+          <view class="input-field picker-field">{{purchaseDate}}</view>
+        </picker>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">备注</text>
+        <input
+          class="input-field"
+          placeholder="选填"
+          value="{{purchaseMemo}}"
+          bindinput="onPurchaseMemoInput"
+        />
+      </view>
+    </view>
+
+    <button
+      class="submit-btn"
+      bindtap="onSubmitPurchase"
+      disabled="{{purchaseSubmitting}}"
+      loading="{{purchaseSubmitting}}"
+    >提交采购记录</button>
+  </view>
+
+  <!-- ==================== 支出录入 ==================== -->
+  <view class="tab-content" wx:if="{{activeTab === 'expense'}}">
+    <view class="card">
+      <view class="input-group">
+        <text class="input-label">支出类别</text>
+        <input
+          class="input-field"
+          placeholder="选择或输入类别"
+          value="{{expenseCategory}}"
+          bindinput="onExpenseCategoryInput"
+        />
+      </view>
+      <view class="category-tags">
+        <view
+          class="cat-tag"
+          wx:for="{{expenseCategories}}"
+          wx:key="*this"
+          data-cat="{{item}}"
+          bindtap="onExpenseCategorySelect"
+        >{{item}}</view>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">金额 (¥)</text>
+        <input
+          class="input-field"
+          type="digit"
+          placeholder="0.00"
+          value="{{expenseAmount}}"
+          bindinput="onExpenseAmountInput"
+        />
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">日期</text>
+        <picker mode="date" value="{{expenseDate}}" bindchange="onExpenseDateChange">
+          <view class="input-field picker-field">{{expenseDate}}</view>
+        </picker>
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">说明</text>
+        <input
+          class="input-field"
+          placeholder="选填"
+          value="{{expenseDescription}}"
+          bindinput="onExpenseDescInput"
+        />
+      </view>
+    </view>
+
+    <button
+      class="submit-btn"
+      bindtap="onSubmitExpense"
+      disabled="{{expenseSubmitting}}"
+      loading="{{expenseSubmitting}}"
+    >提交支出记录</button>
+  </view>
+</view>

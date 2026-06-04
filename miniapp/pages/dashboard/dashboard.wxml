@@ -1,0 +1,73 @@
+<view class="dashboard">
+  <!-- 欢迎栏 -->
+  <view class="welcome-bar">
+    <view class="welcome-text">
+      <text class="welcome-greeting">早上好</text>
+      <text class="welcome-name">{{userName || '用户'}}</text>
+    </view>
+    <view class="welcome-date">{{todayDate}}</view>
+  </view>
+
+  <!-- 今日收入卡片 -->
+  <view class="kpi-main-card">
+    <view class="kpi-main-label">今日收入</view>
+    <view class="kpi-main-amount">{{todayRevenueText}}</view>
+    <view class="kpi-main-hint">点击下方快捷入口开始记账</view>
+  </view>
+
+  <!-- 本月概览 -->
+  <view class="kpi-row">
+    <view class="kpi-item">
+      <view class="kpi-item-label">本月收入</view>
+      <view class="kpi-item-amount success">{{monthRevenueText}}</view>
+    </view>
+    <view class="kpi-item">
+      <view class="kpi-item-label">本月采购</view>
+      <view class="kpi-item-amount warning">{{monthPurchaseText}}</view>
+    </view>
+    <view class="kpi-item">
+      <view class="kpi-item-label">本月支出</view>
+      <view class="kpi-item-amount danger">{{monthExpenseText}}</view>
+    </view>
+  </view>
+
+  <!-- 净利润 -->
+  <view class="profit-card">
+    <text class="profit-label">本月净利润</text>
+    <text class="profit-amount {{monthProfit >= 0 ? 'success' : 'danger'}}">{{monthProfitText}}</text>
+  </view>
+
+  <!-- 快捷入口 -->
+  <view class="quick-actions">
+    <view class="action-item" data-type="income" bindtap="onNavigateToEntry">
+      <view class="action-icon income-bg">💰</view>
+      <text class="action-text">记收入</text>
+    </view>
+    <view class="action-item" data-type="purchase" bindtap="onNavigateToEntry">
+      <view class="action-icon purchase-bg">📦</view>
+      <text class="action-text">记采购</text>
+    </view>
+    <view class="action-item" data-type="expense" bindtap="onNavigateToEntry">
+      <view class="action-icon expense-bg">💸</view>
+      <text class="action-text">记支出</text>
+    </view>
+  </view>
+
+  <!-- 最近记录 -->
+  <view class="recent-section" wx:if="{{recentItems.length > 0}}">
+    <view class="section-title">最近记录</view>
+    <view class="recent-list">
+      <view
+        class="recent-item"
+        wx:for="{{recentItems}}"
+        wx:key="id"
+      >
+        <view class="recent-info">
+          <text class="recent-title">{{item._title}}</text>
+          <text class="recent-date">{{item._date}}</text>
+        </view>
+        <text class="recent-amount {{item._color}}">{{item._amount}}</text>
+      </view>
+    </view>
+  </view>
+</view>

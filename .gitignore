@@ -31,5 +31,8 @@ docker-data/
 # Claude Code
 .claude/
 
+# WeChat Mini Program
+miniapp/project.private.config.json
+
 # Build artifacts
 *.tsbuildinfo

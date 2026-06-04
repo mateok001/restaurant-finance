@@ -1,0 +1,48 @@
+<view class="login-container">
+  <!-- Logo 区域 -->
+  <view class="logo-section">
+    <view class="logo-icon">🍜</view>
+    <view class="logo-title">小餐馆记账</view>
+    <view class="logo-subtitle">移动端财务管理助手</view>
+  </view>
+
+  <!-- 表单区域 -->
+  <view class="form-section">
+    <view class="input-group">
+      <view class="input-label">用户名</view>
+      <input
+        class="input-field"
+        placeholder="请输入用户名"
+        data-field="username"
+        value="{{username}}"
+        bindinput="onInput"
+      />
+    </view>
+
+    <view class="input-group">
+      <view class="input-label">密码</view>
+      <input
+        class="input-field"
+        type="password"
+        placeholder="请输入密码"
+        data-field="password"
+        value="{{password}}"
+        bindinput="onInput"
+      />
+    </view>
+
+    <view class="remember-row" bindtap="onToggleRemember">
+      <view class="checkbox {{remember ? 'checked' : ''}}">
+        <text wx:if="{{remember}}">✓</text>
+      </view>
+      <text class="remember-text">记住密码（30天免登录）</text>
+    </view>
+
+    <button class="login-btn" bindtap="onLogin">登 录</button>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer-hint" bindtap="onRegisterHint">
+    <text>查看默认账户</text>
+  </view>
+</view>

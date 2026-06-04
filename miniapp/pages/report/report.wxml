@@ -1,0 +1,80 @@
+<view class="report-page">
+  <!-- 时间段切换 -->
+  <view class="period-bar">
+    <view
+      class="period-item {{periodType === 'today' ? 'active' : ''}}"
+      data-type="today"
+      bindtap="onPeriodChange"
+    >今日</view>
+    <view
+      class="period-item {{periodType === 'week' ? 'active' : ''}}"
+      data-type="week"
+      bindtap="onPeriodChange"
+    >近7天</view>
+    <view
+      class="period-item {{periodType === 'month' ? 'active' : ''}}"
+      data-type="month"
+      bindtap="onPeriodChange"
+    >本月</view>
+    <view
+      class="period-item {{periodType === 'custom' ? 'active' : ''}}"
+      data-type="custom"
+      bindtap="onPeriodChange"
+    >自定义</view>
+  </view>
+
+  <!-- 自定义日期 -->
+  <view class="date-range" wx:if="{{periodType === 'custom'}}">
+    <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+      <view class="date-picker">{{startDate || '开始日期'}}</view>
+    </picker>
+    <text class="date-separator">至</text>
+    <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+      <view class="date-picker">{{endDate || '结束日期'}}</view>
+    </picker>
+  </view>
+
+  <!-- KPI 卡片 -->
+  <view class="kpi-grid">
+    <view class="kpi-card">
+      <text class="kpi-label">总收入</text>
+      <text class="kpi-value success">{{revenueText}}</text>
+    </view>
+    <view class="kpi-card">
+      <text class="kpi-label">采购总额</text>
+      <text class="kpi-value warning">{{purchaseText}}</text>
+    </view>
+    <view class="kpi-card">
+      <text class="kpi-label">其他支出</text>
+      <text class="kpi-value danger">{{expenseText}}</text>
+    </view>
+    <view class="kpi-card">
+      <text class="kpi-label">净利润</text>
+      <text class="kpi-value {{totalProfit >= 0 ? 'success' : 'danger'}}">{{profitText}}</text>
+    </view>
+  </view>
+
+  <!-- 趋势图（简易柱状图） -->
+  <view class="chart-section" wx:if="{{trendLabels.length > 0}}">
+    <view class="section-title">每日净利润趋势</view>
+    <view class="bar-chart">
+      <view
+        class="bar-col"
+        wx:for="{{trendLabels}}"
+        wx:key="*this"
+        wx:for-item="label"
+        wx:for-index="idx"
+      >
+        <view
+          class="bar {{trendProfit[idx] >= 0 ? 'bar-positive' : 'bar-negative'}}"
+          style="height: {{barHeights[idx]}}rpx;"
+        ></view>
+        <text class="bar-label">{{label.slice(5)}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-hint" wx:if="{{trendLabels.length === 0 && !loading}}">
+    暂无数据
+  </view>
+</view>

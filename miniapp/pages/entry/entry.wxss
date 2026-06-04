@@ -1,0 +1,194 @@
+.entry-page {
+  padding-bottom: 40rpx;
+}
+
+/* Tab 栏 */
+.tab-bar {
+  display: flex;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 28rpx 0;
+  font-size: 28rpx;
+  color: #999;
+  position: relative;
+}
+
+.tab-item.active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 4rpx;
+  background: var(--color-primary);
+  border-radius: 2rpx;
+}
+
+/* 表单 */
+.card {
+  margin: 16rpx 24rpx;
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: var(--color-text);
+}
+
+.form-picker {
+  font-size: 28rpx;
+  color: var(--color-primary);
+}
+
+.divider {
+  height: 1rpx;
+  background: #f0f0f0;
+  margin: 24rpx 0;
+}
+
+/* 收入渠道列表 */
+.channel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.channel-row:last-child {
+  border-bottom: none;
+}
+
+.channel-name {
+  font-size: 28rpx;
+  color: var(--color-text);
+  width: 160rpx;
+}
+
+.channel-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #f7f7f7;
+  border-radius: var(--radius-sm);
+  padding: 0 16rpx;
+  flex: 1;
+  max-width: 360rpx;
+}
+
+.channel-currency {
+  font-size: 28rpx;
+  color: #999;
+  margin-right: 8rpx;
+}
+
+.channel-input {
+  flex: 1;
+  height: 72rpx;
+  font-size: 30rpx;
+  text-align: right;
+}
+
+/* 输入组 */
+.input-group {
+  margin-bottom: 24rpx;
+}
+
+.input-label {
+  display: block;
+  font-size: 26rpx;
+  color: var(--color-text);
+  margin-bottom: 8rpx;
+}
+
+.input-field {
+  width: 100%;
+  height: 80rpx;
+  background: #f7f7f7;
+  border-radius: var(--radius-sm);
+  padding: 0 20rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.picker-field {
+  display: flex;
+  align-items: center;
+  color: var(--color-text);
+}
+
+/* 双列 */
+.form-row-split {
+  display: flex;
+  gap: 16rpx;
+}
+
+.half {
+  flex: 1;
+}
+
+/* 类别标签 */
+.category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+}
+
+.cat-tag {
+  padding: 8rpx 20rpx;
+  background: #f7f7f7;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #666;
+  border: 1rpx solid #eee;
+}
+
+.cat-tag:active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* 空状态 */
+.empty-hint {
+  text-align: center;
+  padding: 60rpx 0;
+  color: #ccc;
+  font-size: 24rpx;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  margin: 32rpx 24rpx;
+  height: 88rpx;
+  background: linear-gradient(135deg, #D4A574, #B8895E);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.submit-btn[disabled] {
+  background: #ccc;
+  color: #fff;
+}

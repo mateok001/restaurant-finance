@@ -1,5 +1,36 @@
 # 变更日志
 
+## 2026-06-04
+
+### 微信小程序 Phase 10 — 原生 JS 开发完成
+- **技术路线变更**：从 Taro 3.x + React + TypeScript 改为**原生 JavaScript**（遵循 `wechat-miniprogram-skill` 规范）
+  - 原因：原生 JS 包体积最小、无框架运行时开销、直接调用 `wx.*` API、无需编译步骤
+- **新增文件 35 个**：
+  - `miniapp/project.config.json` — 小程序项目配置（AppID: wx65428bf1fff2cb38）
+  - `miniapp/app.js` — 全局入口，登录状态检查 + 自动恢复
+  - `miniapp/app.json` — 4 个 Tab 页面路由（首页/记账/报表/我的）
+  - `miniapp/app.wxss` — 全局样式，CSS 变量（主色 #D4A574）
+  - `miniapp/services/api.js` — HTTP 封装：自动 Bearer Token + 401 自动刷新 + 请求重试队列
+  - `miniapp/utils/auth.js` — Token/用户信息读写（wx.Storage 替代 localStorage）
+  - `miniapp/utils/util.js` — 工具函数（日期格式化、金额千分位、Toast/Modal 封装）
+  - `miniapp/pages/login/` — 登录页：用户名密码登录 → JWT 双 Token 存储 → 自动跳转
+  - `miniapp/pages/dashboard/` — 仪表盘：今日收入大字卡 + 本月收入/采购/支出/净利润 KPI + 快捷入口 + 最近记录
+  - `miniapp/pages/entry/` — 记账页（三 Tab）：
+    - 收入录入：按渠道批量录入金额 + 日期选择 + 批量提交
+    - 采购录入：供应商/商品名称输入（后端自动查找或创建）+ 数量/单位/单价/总价联动 + 备注
+    - 支出录入：类别标签快捷选择 + 金额 + 说明
+  - `miniapp/pages/report/` — 报表页：今日/7天/本月/自定义日期切换 + KPI 四宫格（收入/采购/支出/净利润）+ 每日净利润柱状图
+  - `miniapp/pages/profile/` — 个人中心：用户信息展示 + 服务器地址 + 退出登录
+  - `miniapp/images/` — 8 个 Tab 图标占位 PNG（81×81，后续需替换为正式图标）
+- **设计原则**：移动端聚焦"快速录入"，复杂报表和员工管理留到 Web 桌面端
+- **API 兼容性**：复用全部现有后端 REST API（零后端改动）
+  - 采购录入传供应商/商品名称字符串 → `resolveSupplier`/`resolveProduct` 自动处理
+  - 收入批量录入 → `POST /api/v1/daily-revenue/batch`
+- **待完成**：
+  - 替换 Tab 图标为正式设计稿
+  - 配置合法域名（生产环境）
+  - 微信审核提交（"工具-记账"类目）
+
 ## 2026-05-28
 
 ### 报表中心拆分为3个独立页面 + Bug修复

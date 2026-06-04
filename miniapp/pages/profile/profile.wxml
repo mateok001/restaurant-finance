@@ -1,0 +1,41 @@
+<view class="profile-page">
+  <!-- 用户信息头部 -->
+  <view class="user-header">
+    <view class="avatar">👤</view>
+    <view class="user-info">
+      <text class="user-name">{{user.displayName || '用户'}}</text>
+      <text class="user-role">{{user.role === 'admin' ? '管理员' : user.role === 'partner' ? '合伙人' : '员工'}}</text>
+    </view>
+  </view>
+
+  <!-- 菜单列表 -->
+  <view class="menu-section">
+    <view class="menu-item" bindtap="onViewAccount">
+      <text class="menu-icon">📋</text>
+      <text class="menu-text">账户信息</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="onServerConfig">
+      <text class="menu-icon">🔗</text>
+      <text class="menu-text">服务器配置</text>
+      <text class="menu-sub">{{serverUrl}}</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="onAbout">
+      <text class="menu-icon">ℹ️</text>
+      <text class="menu-text">关于</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 数据提示 -->
+  <view class="hint-text">
+    <text>💡 提示：复杂报表和员工管理请在 Web 端操作</text>
+  </view>
+
+  <!-- 退出登录 -->
+  <button class="logout-btn" bindtap="onLogout">退出登录</button>
+
+  <!-- 底部版本号 -->
+  <view class="version-text">v1.0.0</view>
+</view>
