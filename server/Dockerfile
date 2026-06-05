@@ -10,6 +10,9 @@ WORKDIR /app
 # 避免 Puppeteer 在 npm install 时下载 Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
+# 使用国内 npm 镜像加速
+RUN npm config set registry https://registry.npmmirror.com
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -43,7 +46,7 @@ ENV NODE_ENV=production
 
 # 复制依赖（保留 devDeps 以使用 prisma CLI 执行迁移）
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm config set registry https://registry.npmmirror.com && npm ci
 
 # 从构建阶段复制产物
 COPY --from=build /app/dist ./dist
