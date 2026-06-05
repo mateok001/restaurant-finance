@@ -5,12 +5,12 @@
 | 项目 | 详情 |
 |------|------|
 | 日期 | 2026-06-05 |
-| 最终 commit | `fe4c508` |
+| 最终 commit | `c7ec056` |
 | 分支 | `master` |
 | 服务器 | 腾讯云轻量服务器 `43.131.245.188`（Debian 12） |
 | 对象存储 | 腾讯云 COS（ap-seoul, Bucket: mkes001-backup-1304664505） |
-| 域名 | 不购买，使用体验版 + IP 直连 |
-| 部署方式 | Docker Compose（server + web 两个容器） |
+| 域名 | `bistrotap.site`（腾讯云，.site 后缀） |
+| 部署方式 | Docker Compose（server + web 两个容器）+ 宿主机 Nginx SSL 反代 |
 
 ---
 
@@ -173,7 +173,7 @@ sudo certbot --nginx -d 你的域名.com -d www.你的域名.com
 - [x] 种子数据已写入（admin/admin123）
 - [x] 小程序正式 AppID 已配置（wxc5652a7743d817e1）
 - [x] 小程序首次上传成功
-- [ ] **域名购买**（~10元/年，.top/.xyz）
+- [x] **域名购买**（bistrotap.site，腾讯云，.site）
 - [ ] DNS 解析到 43.131.245.188
 - [ ] 服务器安装 Nginx + 申请 SSL 证书
 - [ ] 微信后台配置合法域名
@@ -189,7 +189,7 @@ sudo certbot --nginx -d 你的域名.com -d www.你的域名.com
 |------|------|------|
 | Puppeteer 内存 | ⚠️ | 简报生成需要 ≥2GB 内存，轻量服务器需确认 |
 | SQLite 备份 | 📋 | 需配置 cron 定期备份 .db 到 COS |
-| 域名 & SSL | 🔄 | 进行中，购买便宜域名 + Let's Encrypt 免费 SSL |
+| 域名 & SSL | 🔄 | 域名已购 bistrotap.site，DNS + SSL 配置进行中 |
 | 微信小程序真机 | 🔄 | 待域名 + SSL 完成后可正常使用体验版 |
 | Redis 未使用 | 📋 | 代码中定义了 Redis 配置但未实际使用 |
 

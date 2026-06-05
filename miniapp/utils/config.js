@@ -17,7 +17,7 @@
 // ===== 修改这里的配置 =====
 const DEV_IP = '192.168.1.14'; // 改为你的局域网 IP
 const DEV_PORT = '8080';
-const PROD_DOMAIN = 'http://43.131.245.188:8080'; // 服务器 IP
+const PROD_DOMAIN = 'https://bistrotap.site'; // HTTPS 域名
 // =========================
 
 /**
