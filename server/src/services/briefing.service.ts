@@ -113,7 +113,7 @@ export async function generate(
 
     const imageBuffer = await page.screenshot({ type: 'png', fullPage: true });
     const fileName = `briefing_${type}_${periodStart}_${periodEnd}.png`;
-    const imageUrl = await fileService.uploadFile(imageBuffer, fileName, 'image/png');
+    const imageUrl = await fileService.uploadFile(Buffer.from(imageBuffer), fileName, 'image/png');
 
     // 保存到数据库
     const report = await prisma.report.create({
@@ -122,7 +122,7 @@ export async function generate(
         periodStart: new Date(periodStart),
         periodEnd: new Date(periodEnd),
         imageUrl,
-        summaryJson: briefingData,
+        summaryJson: JSON.stringify(briefingData),
         generatedBy: userId,
       },
     });

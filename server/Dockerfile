@@ -53,7 +53,7 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY prisma ./prisma
 
 # 创建 SQLite 数据目录
-RUN mkdir -p /app/data
+RUN mkdir -p /app/prisma/data
 
 EXPOSE 8080
 

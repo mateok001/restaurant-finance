@@ -19,7 +19,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const product = await productService.getById(req.params.id);
+    const product = await productService.getById(req.params.id as string);
     res.json(product);
   } catch (err) { next(err); }
 });
@@ -33,14 +33,14 @@ router.post('/', requireAdminOrPartner, validate(productSchema), async (req: Req
 
 router.put('/:id', requireAdminOrPartner, validate(productSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const product = await productService.update(req.params.id, req.body);
+    const product = await productService.update(req.params.id as string, req.body);
     res.json(product);
   } catch (err) { next(err); }
 });
 
 router.delete('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await productService.remove(req.params.id);
+    await productService.remove(req.params.id as string);
     res.json({ message: '删除成功' });
   } catch (err) { next(err); }
 });

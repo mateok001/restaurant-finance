@@ -29,7 +29,7 @@ router.post('/revenue-channels', requireAdminOrPartner, validate(revenueChannelS
 router.put('/revenue-channels/:id', requireAdminOrPartner, validate(revenueChannelSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const channel = await prisma.revenueChannel.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: req.body,
     });
     res.json(channel);
@@ -38,17 +38,17 @@ router.put('/revenue-channels/:id', requireAdminOrPartner, validate(revenueChann
 
 router.delete('/revenue-channels/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const revenues = await prisma.dailyRevenue.count({ where: { channelId: req.params.id } });
+    const revenues = await prisma.dailyRevenue.count({ where: { channelId: req.params.id as string } });
     if (revenues > 0) {
       res.status(400).json({ error: '该渠道存在收入记录，无法删除' });
       return;
     }
-    const channel = await prisma.revenueChannel.findUnique({ where: { id: req.params.id } });
+    const channel = await prisma.revenueChannel.findUnique({ where: { id: req.params.id as string } });
     if (channel?.isDefault) {
       res.status(400).json({ error: '默认渠道不可删除' });
       return;
     }
-    await prisma.revenueChannel.delete({ where: { id: req.params.id } });
+    await prisma.revenueChannel.delete({ where: { id: req.params.id as string } });
     res.json({ message: '删除成功' });
   } catch (err) { next(err); }
 });
@@ -129,7 +129,7 @@ router.post('/daily-revenue/batch', requireAdminOrPartner, validate(dailyRevenue
 
 router.put('/daily-revenue/:id', requireAdminOrPartner, validate(dailyRevenueUpdateSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const existing = await prisma.dailyRevenue.findUnique({ where: { id: req.params.id } });
+    const existing = await prisma.dailyRevenue.findUnique({ where: { id: req.params.id as string } });
     if (!existing) {
       res.status(404).json({ error: '收入记录不存在' });
       return;
@@ -142,7 +142,7 @@ router.put('/daily-revenue/:id', requireAdminOrPartner, validate(dailyRevenueUpd
     if (revenueDate !== undefined) updateData.revenueDate = new Date(revenueDate);
     if (memo !== undefined) updateData.memo = memo;
     const revenue = await prisma.dailyRevenue.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: updateData,
     });
     res.json(revenue);
@@ -151,7 +151,7 @@ router.put('/daily-revenue/:id', requireAdminOrPartner, validate(dailyRevenueUpd
 
 router.delete('/daily-revenue/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await prisma.dailyRevenue.delete({ where: { id: req.params.id } });
+    await prisma.dailyRevenue.delete({ where: { id: req.params.id as string } });
     res.json({ message: '删除成功' });
   } catch (err) { next(err); }
 });

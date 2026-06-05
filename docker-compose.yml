@@ -1,21 +1,6 @@
 version: "3.8"
 
 services:
-  # ---- MinIO 文件存储 ----
-  minio:
-    image: minio/minio:latest
-    container_name: rf-minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-    restart: unless-stopped
-
   # ---- 后端 API 服务 ----
   server:
     build:
@@ -26,25 +11,19 @@ services:
       - "8080:8080"
     environment:
       NODE_ENV: production
-      DATABASE_URL: file:./data/restaurant_finance.db
       PORT: "8080"
+      DATABASE_URL: "file:./data/restaurant_finance.db"
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-2h}
       JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-30d}
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: "9000"
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      MINIO_BUCKET: ${MINIO_BUCKET:-restaurant-finance}
-      MINIO_USE_SSL: "false"
-      OLLAMA_SERVICE_URL: http://ollama:11434
+      COS_SECRET_ID: ${COS_SECRET_ID}
+      COS_SECRET_KEY: ${COS_SECRET_KEY}
+      COS_BUCKET: ${COS_BUCKET}
+      COS_REGION: ${COS_REGION}
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
-      REDIS_URL: ${REDIS_URL:-}
     volumes:
-      - sqlite_data:/app/data
-    depends_on:
-      - minio
+      - sqlite_data:/app/prisma/data
     restart: unless-stopped
 
   # ---- Web 前端（Nginx + React） ----
@@ -59,21 +38,5 @@ services:
       - server
     restart: unless-stopped
 
-  # ---- 以下 AI 服务按需启动：docker compose --profile ai up -d ----
-
-  # Ollama + Qwen
-  ollama:
-    image: ollama/ollama:latest
-    container_name: rf-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-    profiles:
-      - ai
-
 volumes:
-  minio_data:
-  ollama_data:
   sqlite_data:

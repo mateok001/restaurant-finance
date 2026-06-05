@@ -115,7 +115,7 @@ router.delete(
   requireRole('admin'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await authService.deleteUser(req.params.id);
+      await authService.deleteUser(req.params.id as string);
       res.json({ message: '用户已删除' });
     } catch (err) {
       next(err);

@@ -38,7 +38,7 @@ router.get('/', requireAdminOrPartner, async (req: Request, res: Response, next:
 // GET 工资详情
 router.get('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const record = await salaryService.getById(req.params.id);
+    const record = await salaryService.getById(req.params.id as string);
     res.json(record);
   } catch (err) { next(err); }
 });
@@ -63,7 +63,7 @@ router.post('/batch', requireAdminOrPartner, validate(salaryBatchSchema), async 
 // PUT 修改工资记录
 router.put('/:id', requireAdminOrPartner, validate(salaryUpdateSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const record = await salaryService.update(req.params.id, req.body);
+    const record = await salaryService.update(req.params.id as string, req.body);
     res.json(record);
   } catch (err) { next(err); }
 });
@@ -71,7 +71,7 @@ router.put('/:id', requireAdminOrPartner, validate(salaryUpdateSchema), async (r
 // PATCH 标记已发放
 router.patch('/:id/pay', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const record = await salaryService.markAsPaid(req.params.id);
+    const record = await salaryService.markAsPaid(req.params.id as string);
     res.json(record);
   } catch (err) { next(err); }
 });
@@ -79,7 +79,7 @@ router.patch('/:id/pay', requireAdminOrPartner, async (req: Request, res: Respon
 // PATCH 撤销已发放
 router.patch('/:id/unpay', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const record = await salaryService.unmarkPaid(req.params.id);
+    const record = await salaryService.unmarkPaid(req.params.id as string);
     res.json(record);
   } catch (err) { next(err); }
 });
@@ -87,7 +87,7 @@ router.patch('/:id/unpay', requireAdminOrPartner, async (req: Request, res: Resp
 // DELETE 删除工资记录
 router.delete('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await salaryService.remove(req.params.id);
+    await salaryService.remove(req.params.id as string);
     res.json({ message: '删除成功' });
   } catch (err) { next(err); }
 });

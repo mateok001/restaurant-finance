@@ -34,7 +34,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const expense = await expenseService.getById(req.params.id);
+    const expense = await expenseService.getById(req.params.id as string);
     res.json(expense);
   } catch (err) { next(err); }
 });
@@ -48,14 +48,14 @@ router.post('/', requireAdminOrPartner, validate(expenseSchema), async (req: Req
 
 router.put('/:id', requireAdminOrPartner, validate(expenseUpdateSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const expense = await expenseService.update(req.params.id, req.body);
+    const expense = await expenseService.update(req.params.id as string, req.body);
     res.json(expense);
   } catch (err) { next(err); }
 });
 
 router.delete('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await expenseService.remove(req.params.id);
+    await expenseService.remove(req.params.id as string);
     res.json({ message: '删除成功' });
   } catch (err) { next(err); }
 });
@@ -67,7 +67,7 @@ router.post('/:id/invoice', requireAdminOrPartner, uploadInvoice.single('invoice
       return;
     }
     const fileUrl = await fileService.uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype);
-    const expense = await expenseService.uploadInvoice(req.params.id, fileUrl);
+    const expense = await expenseService.uploadInvoice(req.params.id as string, fileUrl);
     res.json(expense);
   } catch (err) { next(err); }
 });

@@ -76,7 +76,7 @@ export async function login(
     throw new AppError(401, '用户名或密码错误');
   }
 
-  const tokens = generateTokens(user.id, user.role, user.displayName);
+  const tokens = generateTokens(user.id, user.role as Role, user.displayName);
 
   // 保存 refresh token 到数据库
   const expiresAt = remember
@@ -127,7 +127,7 @@ export async function refreshAccessToken(oldRefreshToken: string) {
     throw new AppError(401, '用户不存在');
   }
 
-  const tokens = generateTokens(user.id, user.role, user.displayName);
+  const tokens = generateTokens(user.id, user.role as Role, user.displayName);
 
   // 在事务中原子地替换 session，避免竞态条件
   // 使用 deleteMany 而非 delete 避免 P2025 错误（并发刷新）

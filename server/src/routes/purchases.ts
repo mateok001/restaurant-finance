@@ -38,7 +38,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 // GET 采购详情
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const purchase = await purchaseService.getById(req.params.id);
+    const purchase = await purchaseService.getById(req.params.id as string);
     res.json(purchase);
   } catch (err) { next(err); }
 });
@@ -54,7 +54,7 @@ router.post('/', requireAdminOrPartner, validate(purchaseSchema), async (req: Re
 // PUT 编辑采购记录
 router.put('/:id', requireAdminOrPartner, validate(purchaseUpdateSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const purchase = await purchaseService.update(req.params.id, req.body);
+    const purchase = await purchaseService.update(req.params.id as string, req.body);
     res.json(purchase);
   } catch (err) { next(err); }
 });
@@ -62,7 +62,7 @@ router.put('/:id', requireAdminOrPartner, validate(purchaseUpdateSchema), async 
 // DELETE 删除采购记录
 router.delete('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await purchaseService.remove(req.params.id);
+    await purchaseService.remove(req.params.id as string);
     res.json({ message: '删除成功' });
   } catch (err) { next(err); }
 });
@@ -80,7 +80,7 @@ router.post('/:id/invoice', requireAdminOrPartner, uploadInvoice.single('invoice
       req.file.originalname,
       req.file.mimetype,
     );
-    const purchase = await purchaseService.uploadInvoice(req.params.id, fileUrl);
+    const purchase = await purchaseService.uploadInvoice(req.params.id as string, fileUrl);
     res.json(purchase);
   } catch (err) { next(err); }
 });

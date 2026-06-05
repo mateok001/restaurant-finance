@@ -26,7 +26,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       res.status(403).json({ error: '仅管理员和合伙人可查看完整信息' });
       return;
     }
-    const employee = await employeeService.getById(req.params.id, showFull);
+    const employee = await employeeService.getById(req.params.id as string, showFull);
     res.json(employee);
   } catch (err) { next(err); }
 });
@@ -40,21 +40,21 @@ router.post('/', requireAdminOrPartner, validate(employeeSchema), async (req: Re
 
 router.put('/:id', requireAdminOrPartner, validate(employeeSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const employee = await employeeService.update(req.params.id, req.body);
+    const employee = await employeeService.update(req.params.id as string, req.body);
     res.json(employee);
   } catch (err) { next(err); }
 });
 
 router.patch('/:id/status', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const employee = await employeeService.toggleStatus(req.params.id);
+    const employee = await employeeService.toggleStatus(req.params.id as string);
     res.json(employee);
   } catch (err) { next(err); }
 });
 
 router.delete('/:id', requireAdminOrPartner, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await employeeService.remove(req.params.id);
+    await employeeService.remove(req.params.id as string);
     res.json({ message: '删除成功' });
   } catch (err) { next(err); }
 });

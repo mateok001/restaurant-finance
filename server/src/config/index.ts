@@ -26,17 +26,15 @@ export const config = {
   redis: {
     url: process.env.REDIS_URL || '',
   },
-  minio: {
-    endPoint: process.env.MINIO_ENDPOINT || 'localhost',
-    port: parseInt(process.env.MINIO_PORT || '9000', 10),
-    accessKey: isProduction
-      ? requireEnv('MINIO_ACCESS_KEY')
-      : process.env.MINIO_ACCESS_KEY || 'minioadmin',
+  cos: {
+    secretId: isProduction
+      ? requireEnv('COS_SECRET_ID')
+      : process.env.COS_SECRET_ID || '',
     secretKey: isProduction
-      ? requireEnv('MINIO_SECRET_KEY')
-      : process.env.MINIO_SECRET_KEY || 'minioadmin',
-    bucket: process.env.MINIO_BUCKET || 'restaurant-finance',
-    useSSL: process.env.MINIO_USE_SSL === 'true',
+      ? requireEnv('COS_SECRET_KEY')
+      : process.env.COS_SECRET_KEY || '',
+    bucket: process.env.COS_BUCKET || 'restaurant-finance',
+    region: process.env.COS_REGION || 'ap-guangzhou',
   },
   ai: {
     ollamaUrl: process.env.OLLAMA_SERVICE_URL || 'http://localhost:11434',
