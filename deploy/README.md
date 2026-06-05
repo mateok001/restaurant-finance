@@ -91,13 +91,26 @@ certbot --nginx -d 你的域名.com
 nginx -t && systemctl reload nginx
 ```
 
-### 7. （可选）微信小程序上线
+### 7. 微信小程序（体验版，无需域名）
 
-1. 在 `miniapp/utils/config.js` 中设置 `PROD_DOMAIN = 'https://你的域名.com'`
-2. 在微信公众平台 → 开发管理 → 开发设置 → 服务器域名：
-   - `request 合法域名`: `https://你的域名.com`
-   - `uploadFile 合法域名`: `https://mkes001-backup-1304664505.cos.ap-seoul.myqcloud.com`
-3. 用微信开发者工具上传代码，提交审核
+本项目采用**体验版**方案，不需要购买域名和 SSL：
+
+- **体验版上限 30 人**，本项目用户仅 2-3 人，完全够用
+- API 通过服务器 IP 直连：`http://43.131.245.188:8080/api/v1`
+- 已配置在 `miniapp/utils/config.js`
+
+**操作步骤**：
+
+1. 用[微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)打开 `miniapp/` 目录
+2. 右上角「详情」→「本地设置」→ 勾选 **「不校验合法域名」**
+3. 点击工具栏 **「上传」**，版本号填 `1.0.x`，备注写改动内容
+4. 上传完成后，登录 [微信公众平台](https://mp.weixin.qq.com/) → 管理 → 版本管理
+5. 在「体验版」中设置体验成员（添加另一个经营者的微信号）
+6. 生成的**体验版二维码**发给经营者扫码使用
+
+**后续更新**：改完代码 → 重新上传 → 体验版自动更新，无需重新扫码
+
+> 如果将来需要正式上线（>30 人或需要审核通过），参考第 6 步配置域名 + SSL
 
 ### 8. 数据库备份（推荐）
 
