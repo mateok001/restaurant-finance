@@ -27,7 +27,7 @@ const PROD_DOMAIN = 'http://43.131.245.188:8080'; // 服务器 IP
  *   'trial'   — 体验版
  *   'release' — 正式版
  */
-function isProduction(): boolean {
+function isProduction() {
   try {
     const accountInfo = wx.getAccountInfoSync();
     return accountInfo.miniProgram.envVersion === 'release';
