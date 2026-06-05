@@ -46,8 +46,7 @@ ENV NODE_ENV=production
 
 # 复制依赖（保留 devDeps 以使用 prisma CLI 执行迁移）
 COPY package.json package-lock.json ./
-RUN npm config set registry https://registry.npmmirror.com && npm ci
-
+RUN npm config set registry https://registry.npmmirror.com && npm ci --include=dev
 # 从构建阶段复制产物
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
