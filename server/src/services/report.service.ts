@@ -322,6 +322,7 @@ export async function getTrends(dateRange: DateRange) {
       revenue: Math.round(data.revenue * 100) / 100,
       purchaseCost: Math.round(data.purchaseCost * 100) / 100,
       expenses: Math.round(data.expenses * 100) / 100,
+      grossProfit: Math.round((data.revenue - data.purchaseCost) * 100) / 100,
       netProfit: Math.round((data.revenue - data.purchaseCost - data.expenses) * 100) / 100,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));

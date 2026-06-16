@@ -110,6 +110,49 @@ export async function create(data: {
   });
 }
 
+export async function createBatch(batchData: {
+  supplierId: string;
+  purchaseDate: string;
+  items: Array<{
+    productId: string;
+    unit?: string | null;
+    quantity?: number;
+    unitPrice?: number;
+    totalAmount: number;
+  }>;
+  memo?: string | null;
+}, userId: string) {
+  const supplierId = await resolveSupplier(batchData.supplierId);
+  const purchaseDate = new Date(batchData.purchaseDate);
+
+  const results = [];
+  for (const item of batchData.items) {
+    const productId = await resolveProduct(item.productId);
+    const purchase = await prisma.purchase.create({
+      data: {
+        supplierId,
+        productId,
+        unit: item.unit || null,
+        quantity: item.quantity ?? 0,
+        unitPrice: item.unitPrice ?? 0,
+        totalAmount: item.totalAmount,
+        purchaseDate,
+        recordedBy: userId,
+        inputMethod: 'manual',
+        memo: batchData.memo || null,
+      },
+      include: {
+        supplier: { select: { id: true, name: true } },
+        product: { select: { id: true, name: true } },
+        recorder: { select: { id: true, displayName: true } },
+      },
+    });
+    results.push(purchase);
+  }
+
+  return results;
+}
+
 export async function update(
   id: string,
   data: {

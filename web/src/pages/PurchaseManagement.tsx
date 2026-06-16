@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, Select, AutoComplete, Popconfirm, message, Space, Upload, Tag, Card, Statistic, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, SearchOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import api from '../services/api';
 
@@ -18,6 +18,114 @@ export default function PurchaseManagementPage() {
   const [form] = Form.useForm();
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [invoiceTarget, setInvoiceTarget] = useState<string | null>(null);
+
+  // 批量采购
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchForm] = Form.useForm();
+  const [batchItems, setBatchItems] = useState<Array<{
+    key: number;
+    productId: string;
+    unit: string;
+    quantity: number | null;
+    unitPrice: number | null;
+    totalAmount: number | null;
+  }>>([]);
+
+  // 批量采购 - 添加一行
+  const addBatchRow = () => {
+    setBatchItems((prev) => [
+      ...prev,
+      { key: Date.now() + Math.random(), productId: '', unit: '', quantity: null, unitPrice: null, totalAmount: null },
+    ]);
+  };
+
+  // 批量采购 - 删除一行
+  const removeBatchRow = (key: number) => {
+    setBatchItems((prev) => prev.filter((item) => item.key !== key));
+  };
+
+  // 批量采购 - 更新某行
+  const updateBatchRow = (key: number, field: string, value: any) => {
+    setBatchItems((prev) =>
+      prev.map((item) => {
+        if (item.key !== key) return item;
+        const updated = { ...item, [field]: value };
+
+        // 自动计算联动：数量 * 单价 = 总价；总价 / 数量 = 单价
+        if (field === 'quantity' || field === 'unitPrice') {
+          const q = field === 'quantity' ? value : item.quantity;
+          const up = field === 'unitPrice' ? value : item.unitPrice;
+          if (q && up) {
+            updated.totalAmount = Math.round(q * up * 100) / 100;
+          }
+        } else if (field === 'totalAmount') {
+          const q = updated.quantity;
+          if (q && q > 0 && value != null) {
+            updated.unitPrice = Math.round((value / q) * 10000) / 10000;
+          }
+        }
+        return updated;
+      }),
+    );
+  };
+
+  // 批量采购 - 提交
+  const handleBatchSubmit = async () => {
+    try {
+      const values = await batchForm.validateFields();
+      if (batchItems.length === 0) {
+        message.error('请至少添加一条采购明细');
+        return;
+      }
+
+      // 校验每行的商品必填且总价>0
+      for (let i = 0; i < batchItems.length; i++) {
+        const item = batchItems[i];
+        if (!item.productId) {
+          message.error(`第 ${i + 1} 行商品名称不能为空`);
+          return;
+        }
+        if (!item.totalAmount || Number(item.totalAmount) <= 0) {
+          message.error(`第 ${i + 1} 行总价必须大于0`);
+          return;
+        }
+      }
+
+      const payload = {
+        supplierId: values.supplierId,
+        purchaseDate: values.purchaseDate.format('YYYY-MM-DD'),
+        memo: values.memo,
+        items: batchItems.map((item) => ({
+          productId: item.productId,
+          unit: item.unit || null,
+          quantity: item.quantity ?? 0,
+          unitPrice: item.unitPrice ?? 0,
+          totalAmount: Number(item.totalAmount),
+        })),
+      };
+
+      await api.post('/purchases/batch', payload);
+      message.success(`已批量新增 ${batchItems.length} 条采购记录`);
+      setBatchModalOpen(false);
+      batchForm.resetFields();
+      setBatchItems([]);
+      fetchData();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '操作失败');
+    }
+  };
+
+  const openBatchModal = () => {
+    batchForm.resetFields();
+    batchForm.setFieldsValue({ purchaseDate: dayjs() });
+    setBatchItems([
+      { key: Date.now(), productId: '', unit: '', quantity: null, unitPrice: null, totalAmount: null },
+    ]);
+    setBatchModalOpen(true);
+  };
+
+  const batchTotalAmount = batchItems.reduce((s, item) => s + (Number(item.totalAmount) || 0), 0);
+  const batchItemCount = batchItems.length;
 
   // 日期筛选
   const [filterYear, setFilterYear] = useState<number>(now.year());
@@ -205,6 +313,7 @@ export default function PurchaseManagementPage() {
           <Button icon={<SearchOutlined />} onClick={fetchData}>查询</Button>
         </Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>新增采购</Button>
+        <Button icon={<PlusOutlined />} style={{ borderColor: '#D4A574', color: '#D4A574' }} onClick={openBatchModal}>批量新增采购</Button>
       </div>
 
       <Table columns={columns} dataSource={data.items} rowKey="id" loading={loading}
@@ -287,6 +396,116 @@ export default function PurchaseManagementPage() {
           <p className="ant-upload-drag-icon"><UploadOutlined style={{ fontSize: 36, color: '#D4A574' }} /></p>
           <p>点击或拖拽上传发票图片/PDF</p>
         </Upload.Dragger>
+      </Modal>
+
+      <Modal
+        title="批量新增采购"
+        open={batchModalOpen}
+        onCancel={() => { setBatchModalOpen(false); }}
+        onOk={handleBatchSubmit}
+        okText="保存全部"
+        width={900}
+        destroyOnClose
+      >
+        <Form form={batchForm} layout="inline" style={{ marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+          <Form.Item name="purchaseDate" label="采购日期" rules={[{ required: true, message: '请选择日期' }]} style={{ marginRight: 24 }}>
+            <DatePicker style={{ width: 160 }} />
+          </Form.Item>
+          <Form.Item name="supplierId" label="供应商" rules={[{ required: true, message: '请选择或输入供应商' }]}>
+            <AutoComplete
+              style={{ width: 260 }}
+              placeholder="选择或输入供应商名称"
+              options={suppliers.map((s: any) => ({ label: s.name, value: s.id }))}
+              filterOption={(inputValue, option) =>
+                option!.label.toLowerCase().includes(inputValue.toLowerCase())
+              }
+              allowClear
+            />
+          </Form.Item>
+          <Form.Item name="memo" label="备注" style={{ flex: 1, minWidth: 200 }}>
+            <Input placeholder="备注信息（所有行共用）" />
+          </Form.Item>
+        </Form>
+
+        <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: '12px 16px', marginBottom: 8 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, fontWeight: 600, fontSize: 13, color: '#666', paddingRight: 40 }}>
+            <span style={{ width: 24, textAlign: 'center' }}>#</span>
+            <span style={{ flex: 2 }}>商品名称</span>
+            <span style={{ flex: 1 }}>单位</span>
+            <span style={{ flex: 1 }}>数量</span>
+            <span style={{ flex: 1 }}>单价</span>
+            <span style={{ flex: 1.2 }}>总价</span>
+            <span style={{ width: 36 }}></span>
+          </div>
+
+          {batchItems.map((item, idx) => (
+            <div key={item.key} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 13 }}>{idx + 1}</span>
+              <AutoComplete
+                style={{ flex: 2 }}
+                value={item.productId}
+                placeholder="选择或输入商品"
+                options={products.map((p: any) => ({ label: p.name, value: p.id }))}
+                filterOption={(inputValue: string, option: any) =>
+                  option!.label.toLowerCase().includes(inputValue.toLowerCase())
+                }
+                onChange={(val) => updateBatchRow(item.key, 'productId', val)}
+                allowClear
+              />
+              <Select
+                style={{ flex: 1 }}
+                value={item.unit || undefined}
+                placeholder="单位"
+                options={unitOptions}
+                onChange={(val) => updateBatchRow(item.key, 'unit', val)}
+                allowClear
+              />
+              <InputNumber
+                style={{ flex: 1 }}
+                value={item.quantity}
+                min={0}
+                step={0.1}
+                placeholder="0"
+                onChange={(val) => updateBatchRow(item.key, 'quantity', val)}
+              />
+              <InputNumber
+                style={{ flex: 1 }}
+                value={item.unitPrice}
+                min={0}
+                step={0.01}
+                prefix="¥"
+                placeholder="0.00"
+                onChange={(val) => updateBatchRow(item.key, 'unitPrice', val)}
+              />
+              <InputNumber
+                style={{ flex: 1.2 }}
+                value={item.totalAmount}
+                min={0.01}
+                step={0.01}
+                prefix="¥"
+                placeholder="0.00"
+                onChange={(val) => updateBatchRow(item.key, 'totalAmount', val)}
+              />
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<MinusCircleOutlined />}
+                onClick={() => removeBatchRow(item.key)}
+                disabled={batchItems.length <= 1}
+                style={{ width: 36 }}
+              />
+            </div>
+          ))}
+        </div>
+
+        <Button type="dashed" onClick={addBatchRow} icon={<PlusOutlined />} block style={{ marginBottom: 12 }}>
+          添加一行
+        </Button>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: 14, color: '#333' }}>
+          <span>共 <strong>{batchItemCount}</strong> 件商品，合计 <strong style={{ color: '#D4A574' }}>¥{batchTotalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong></span>
+        </div>
       </Modal>
     </div>
   );

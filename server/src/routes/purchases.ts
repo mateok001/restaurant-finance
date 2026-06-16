@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { authenticate, requireAdminOrPartner } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { purchaseSchema, purchaseUpdateSchema } from '../types/schemas';
+import { purchaseSchema, purchaseUpdateSchema, purchaseBatchSchema } from '../types/schemas';
 import * as purchaseService from '../services/purchase.service';
 
 const router = Router();
@@ -48,6 +48,14 @@ router.post('/', requireAdminOrPartner, validate(purchaseSchema), async (req: Re
   try {
     const purchase = await purchaseService.create(req.body, req.userId!);
     res.status(201).json(purchase);
+  } catch (err) { next(err); }
+});
+
+// POST 批量创建采购
+router.post('/batch', requireAdminOrPartner, validate(purchaseBatchSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const purchases = await purchaseService.createBatch(req.body, req.userId!);
+    res.status(201).json(purchases);
   } catch (err) { next(err); }
 });
 

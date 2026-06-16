@@ -47,6 +47,21 @@ export const purchaseSchema = z.object({
   memo: z.string().optional().nullable(),
 });
 
+export const purchaseBatchItemSchema = z.object({
+  productId: z.string().min(1, '商品必填'),
+  unit: z.string().optional().nullable(),
+  quantity: z.number().min(0).optional(),
+  unitPrice: z.number().min(0).optional(),
+  totalAmount: z.number().positive('总金额必须大于0'),
+});
+
+export const purchaseBatchSchema = z.object({
+  supplierId: z.string().min(1, '供应商必填'),
+  purchaseDate: z.string().refine((d) => !isNaN(Date.parse(d)), '日期格式无效'),
+  items: z.array(purchaseBatchItemSchema).min(1, '至少需要一条采购明细'),
+  memo: z.string().optional().nullable(),
+});
+
 export const purchaseUpdateSchema = z.object({
   supplierId: z.string().min(1, '供应商必填').optional(),
   productId: z.string().min(1, '商品必填').optional(),
