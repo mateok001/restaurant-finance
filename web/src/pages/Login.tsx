@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Card, Checkbox, message } from 'antd';
+import { Form, Input, Button, Card, Checkbox, Modal, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import api from '../services/api';
@@ -9,6 +9,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useAuthStore();
+
+  // 注册
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerForm] = Form.useForm();
+
+  // 修改密码
+  const [pwdOpen, setPwdOpen] = useState(false);
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdForm] = Form.useForm();
 
   const onFinish = async (values: { username: string; password: string; remember: boolean }) => {
     setLoading(true);
@@ -29,6 +39,34 @@ export default function LoginPage() {
       message.error(err.response?.data?.error || '登录失败');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegister = async (values: any) => {
+    setRegisterLoading(true);
+    try {
+      await api.post('/auth/public-register', values);
+      message.success('注册成功，请登录');
+      setRegisterOpen(false);
+      registerForm.resetFields();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '注册失败');
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  const handleChangePwd = async (values: any) => {
+    setPwdLoading(true);
+    try {
+      await api.post('/auth/public-change-password', values);
+      message.success('密码修改成功，请重新登录');
+      setPwdOpen(false);
+      pwdForm.resetFields();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || '修改失败');
+    } finally {
+      setPwdLoading(false);
     }
   };
 
@@ -75,10 +113,10 @@ export default function LoginPage() {
         </div>
         <Form name="login" onFinish={onFinish} size="large" initialValues={{ remember: true }}>
           <Form.Item name="username" rules={[{ required: true, message: '请输入用户名' }]}>
-            <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} placeholder="用户名" />
+            <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} />
           </Form.Item>
           <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
-            <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} placeholder="密码" />
+            <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} />
           </Form.Item>
           <Form.Item name="remember" valuePropName="checked">
             <Checkbox>记住登录状态</Checkbox>
@@ -90,11 +128,58 @@ export default function LoginPage() {
             </Button>
           </Form.Item>
         </Form>
+
+        <div style={{ textAlign: 'center', marginTop: 16, display: 'flex', justifyContent: 'center', gap: 16 }}>
+          <Button type="link" onClick={() => setRegisterOpen(true)}>注册新用户</Button>
+          <Button type="link" onClick={() => setPwdOpen(true)}>修改密码</Button>
+        </div>
       </Card>
 
-      <div style={{ marginTop: 24, color: 'rgba(255,255,255,0.35)', fontSize: 12, textAlign: 'center' }}>
-        默认账户: admin / admin123
-      </div>
+      {/* 注册 Modal */}
+      <Modal
+        title="注册新用户"
+        open={registerOpen}
+        onCancel={() => { setRegisterOpen(false); registerForm.resetFields(); }}
+        onOk={() => registerForm.submit()}
+        confirmLoading={registerLoading}
+        okText="注册"
+        destroyOnClose
+      >
+        <Form form={registerForm} layout="vertical" onFinish={handleRegister}>
+          <Form.Item name="username" label="用户名" rules={[{ required: true, min: 2, message: '用户名至少2位' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="password" label="密码" rules={[{ required: true, min: 6, message: '密码至少6位' }]}>
+            <Input.Password />
+          </Form.Item>
+          <Form.Item name="displayName" label="显示名称" rules={[{ required: true, message: '请输入显示名称' }]}>
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 修改密码 Modal */}
+      <Modal
+        title="修改密码"
+        open={pwdOpen}
+        onCancel={() => { setPwdOpen(false); pwdForm.resetFields(); }}
+        onOk={() => pwdForm.submit()}
+        confirmLoading={pwdLoading}
+        okText="确认修改"
+        destroyOnClose
+      >
+        <Form form={pwdForm} layout="vertical" onFinish={handleChangePwd}>
+          <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="oldPassword" label="原密码" rules={[{ required: true, message: '请输入原密码' }]}>
+            <Input.Password />
+          </Form.Item>
+          <Form.Item name="newPassword" label="新密码" rules={[{ required: true, min: 6, message: '新密码至少6位' }]}>
+            <Input.Password />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

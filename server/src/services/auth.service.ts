@@ -198,6 +198,32 @@ export async function changePassword(userId: string, oldPassword: string, newPas
   await prisma.session.deleteMany({ where: { userId } });
 }
 
+export async function registerPublic(data: {
+  username: string;
+  password: string;
+  displayName: string;
+}) {
+  return register({ ...data, role: 'staff' as Role });
+}
+
+export async function changePasswordPublic(
+  username: string,
+  oldPassword: string,
+  newPassword: string,
+) {
+  const user = await prisma.user.findUnique({ where: { username } });
+  if (!user) throw new AppError(404, '用户不存在');
+
+  const valid = await bcrypt.compare(oldPassword, user.passwordHash);
+  if (!valid) throw new AppError(400, '原密码错误');
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+
+  // 清除所有会话，强制重新登录
+  await prisma.session.deleteMany({ where: { userId: user.id } });
+}
+
 export async function listUsers() {
   return prisma.user.findMany({
     select: {

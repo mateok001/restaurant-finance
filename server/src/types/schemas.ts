@@ -19,6 +19,18 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(6, '新密码至少6位'),
 });
 
+export const publicRegisterSchema = z.object({
+  username: z.string().min(2, '用户名至少2位').max(50),
+  password: z.string().min(6, '密码至少6位'),
+  displayName: z.string().min(1, '显示名称必填').max(50),
+});
+
+export const publicChangePasswordSchema = z.object({
+  username: z.string().min(1, '请输入用户名'),
+  oldPassword: z.string().min(1, '请输入原密码'),
+  newPassword: z.string().min(6, '新密码至少6位'),
+});
+
 // ========== 供应商 ==========
 export const supplierSchema = z.object({
   name: z.string().min(1, '供应商名称必填').max(100),

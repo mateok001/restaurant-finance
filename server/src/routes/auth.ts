@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, requireRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { loginSchema, registerSchema, changePasswordSchema } from '../types/schemas';
+import { loginSchema, registerSchema, changePasswordSchema, publicRegisterSchema, publicChangePasswordSchema } from '../types/schemas';
 import * as authService from '../services/auth.service';
 import { Role } from '../types/enums';
 
@@ -17,6 +17,35 @@ router.post(
     try {
       const user = await authService.register(req.body);
       res.status(201).json(user);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/v1/auth/public-register（公开注册，仅限 staff 角色）
+router.post(
+  '/public-register',
+  validate(publicRegisterSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await authService.registerPublic(req.body);
+      res.status(201).json(user);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /api/v1/auth/public-change-password（无需登录，验证用户名+旧密码后修改）
+router.post(
+  '/public-change-password',
+  validate(publicChangePasswordSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { username, oldPassword, newPassword } = req.body;
+      await authService.changePasswordPublic(username, oldPassword, newPassword);
+      res.json({ message: '密码修改成功，请重新登录' });
     } catch (err) {
       next(err);
     }
